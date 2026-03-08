@@ -50,7 +50,7 @@ logging:
     root: WARN
     com.herb.platform: INFO
   file:
-    name: ${LOG_PATH:/var/logs/herb-platform/app.log}
+    name: ${LOG_PATH:logs/herb-platform.log}
     max-size: 100MB
     max-history: 30
 

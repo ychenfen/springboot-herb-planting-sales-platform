@@ -12,6 +12,9 @@ COLLATE utf8mb4_unicode_ci;
 
 USE herb_platform;
 
+-- 关闭外键检查（避免删除顺序问题，Windows 和 Linux 均适用）
+SET FOREIGN_KEY_CHECKS = 0;
+
 -- ============================================
 -- 一、用户权限模块表
 -- ============================================
@@ -541,6 +544,9 @@ SELECT
 FROM herb_order
 WHERE deleted = 0
 GROUP BY DATE(create_time);
+
+-- 恢复外键检查
+SET FOREIGN_KEY_CHECKS = 1;
 
 -- ============================================
 -- 数据库初始化完成

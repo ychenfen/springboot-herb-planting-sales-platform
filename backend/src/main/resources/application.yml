@@ -4,6 +4,11 @@ spring:
   profiles:
     active: dev
 
+  # Spring MVC路径匹配策略（knife4j 4.x 与 Spring Boot 2.7 兼容性必需）
+  mvc:
+    pathmatch:
+      matching-strategy: ant_path_matcher
+
   # 文件上传配置
   servlet:
     multipart:
