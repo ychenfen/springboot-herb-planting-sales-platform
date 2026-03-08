@@ -1,0 +1,47 @@
+.
+|-- 1..docx
+|-- backend
+|   |-- pom.xml
+|   `-- src
+|       |-- main
+|       `-- test
+|-- database
+|   |-- data.sql
+|   `-- schema.sql
+|-- docs
+|   |-- API接口文档.md
+|   |-- 部署文档.md
+|   |-- 代码生成指南.md
+|   |-- 开发指南.md
+|   |-- 快速开始指南.md
+|   `-- 数据库设计.md
+|-- frontend
+|   |-- index.html
+|   |-- package-lock.json
+|   |-- package.json
+|   |-- public
+|   |   `-- vite.svg
+|   |-- README.md
+|   |-- src
+|   |   |-- api
+|   |   |-- App.vue
+|   |   |-- assets
+|   |   |-- components
+|   |   |-- directives
+|   |   |-- layouts
+|   |   |-- main.js
+|   |   |-- router
+|   |   |-- stores
+|   |   |-- style.css
+|   |   |-- utils
+|   |   `-- views
+|   `-- vite.config.js
+|-- README.md
+|-- 开始使用.txt
+|-- 下一步操作指南.md
+|-- 项目检查清单.md
+|-- 项目实施计划.md
+|-- 项目文件树.txt
+`-- 项目总览.md
+
+19 directories, 26 files

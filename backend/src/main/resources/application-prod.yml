@@ -1,0 +1,64 @@
+# 生产环境配置
+spring:
+  # 数据源配置
+  datasource:
+    type: com.alibaba.druid.pool.DruidDataSource
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://your-production-host:3306/herb_platform?useUnicode=true&characterEncoding=utf8&useSSL=true&serverTimezone=Asia/Shanghai
+    username: ${DB_USERNAME:herb_user}
+    password: ${DB_PASSWORD:your_password}
+    druid:
+      initial-size: 10
+      min-idle: 10
+      max-active: 50
+      max-wait: 60000
+      time-between-eviction-runs-millis: 60000
+      min-evictable-idle-time-millis: 300000
+      validation-query: SELECT 1
+      test-while-idle: true
+      test-on-borrow: false
+      test-on-return: false
+      pool-prepared-statements: true
+      max-pool-prepared-statement-per-connection-size: 20
+      filters: stat,wall
+      connection-properties: druid.stat.mergeSql=true;druid.stat.slowSqlMillis=5000
+      use-global-data-source-stat: true
+
+  # Redis配置
+  redis:
+    host: ${REDIS_HOST:localhost}
+    port: ${REDIS_PORT:6379}
+    password: ${REDIS_PASSWORD:}
+    database: 0
+    timeout: 5000ms
+    lettuce:
+      pool:
+        max-active: 50
+        max-wait: -1ms
+        max-idle: 20
+        min-idle: 10
+
+# MyBatis Plus配置
+mybatis-plus:
+  configuration:
+    # 生产环境关闭SQL日志
+    log-impl: org.apache.ibatis.logging.nologging.NoLoggingImpl
+
+# 日志配置
+logging:
+  level:
+    root: WARN
+    com.herb.platform: INFO
+  file:
+    name: ${LOG_PATH:/var/logs/herb-platform/app.log}
+    max-size: 100MB
+    max-history: 30
+
+# 服务器配置
+server:
+  # 生产环境端口
+  port: ${SERVER_PORT:8080}
+  # 启用压缩
+  compression:
+    enabled: true
+    mime-types: application/json,application/xml,text/html,text/xml,text/plain

@@ -1,0 +1,94 @@
+spring:
+  application:
+    name: herb-platform
+  profiles:
+    active: dev
+
+  # 文件上传配置
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 10MB
+      max-request-size: 20MB
+
+  # Jackson配置
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: GMT+8
+    serialization:
+      write-dates-as-timestamps: false
+    default-property-inclusion: non_null
+
+# MyBatis Plus配置
+mybatis-plus:
+  # Mapper XML文件位置
+  mapper-locations: classpath*:/mapper/**/*.xml
+  # 实体类扫描路径
+  type-aliases-package: com.herb.platform.entity
+  # 全局配置
+  global-config:
+    db-config:
+      # 主键类型 (AUTO: 数据库自增, ASSIGN_ID: 雪花算法)
+      id-type: AUTO
+      # 逻辑删除字段
+      logic-delete-field: deleted
+      # 逻辑删除值
+      logic-delete-value: 1
+      # 逻辑未删除值
+      logic-not-delete-value: 0
+    # 是否控制台打印Banner
+    banner: false
+  # MyBatis原生配置
+  configuration:
+    # 驼峰命名转换
+    map-underscore-to-camel-case: true
+    # 缓存开启
+    cache-enabled: true
+    # 日志实现
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+
+# 日志配置
+logging:
+  level:
+    root: INFO
+    com.herb.platform: DEBUG
+  pattern:
+    console: '%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{50} - %msg%n'
+  file:
+    name: logs/herb-platform.log
+
+# 服务器配置
+server:
+  port: 8080
+  servlet:
+    context-path: /api
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
+
+# JWT配置（需要至少256位密钥）
+jwt:
+  secret: herb-platform-secret-key-2024-must-be-at-least-256-bits
+  expiration: 604800  # 7天(秒)
+
+# 应用自定义配置
+herb:
+  # 文件上传配置
+  file:
+    access-path: ${HERB_ACCESS_PATH:/uploads}
+    storage-path: ${HERB_STORAGE_PATH:./uploads}
+    max-size: 10485760 # 10MB
+    allowed-image-types: jpg,jpeg,png,gif,bmp
+    allowed-file-types: pdf,doc,docx,xls,xlsx
+
+  # 分页配置
+  page:
+    default-size: 10
+    max-size: 100
+
+  # Redis缓存配置
+  cache:
+    user-expire: 3600 # 用户信息缓存过期时间(秒)
+    permission-expire: 7200 # 权限信息缓存过期时间(秒)
+    hotspot-expire: 600 # 热点数据缓存过期时间(秒)
