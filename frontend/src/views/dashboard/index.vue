@@ -1,72 +1,70 @@
 <template>
   <div class="dashboard">
-    <!-- 统计卡片 -->
-    <div class="stat-cards">
-      <div v-if="isAdmin" class="stat-card" style="--card-color: #2e7d32">
+    <section class="stat-cards">
+      <article v-if="isAdmin" class="stat-card" style="--card-color: #2e7d32">
         <div class="stat-icon">
-          <el-icon :size="32"><User /></el-icon>
+          <el-icon :size="30"><User /></el-icon>
         </div>
         <div class="stat-info">
-          <div class="stat-value">{{ dashboard.userCount || 0 }}</div>
-          <div class="stat-label">用户总数</div>
+          <strong>{{ dashboard.userCount || 0 }}</strong>
+          <span>平台用户总数</span>
         </div>
         <div class="stat-footer">
           <span>种植户 {{ dashboard.farmerCount || 0 }}</span>
-          <span>采购商 {{ dashboard.buyerCount || 0 }}</span>
+          <span>采购端 {{ dashboard.buyerCount || 0 }}</span>
         </div>
-      </div>
+      </article>
 
-      <div class="stat-card" style="--card-color: #1976d2">
+      <article class="stat-card" style="--card-color: #1976d2">
         <div class="stat-icon">
-          <el-icon :size="32"><Cherry /></el-icon>
+          <el-icon :size="30"><Cherry /></el-icon>
         </div>
         <div class="stat-info">
-          <div class="stat-value">{{ dashboard.cropCount || 0 }}</div>
-          <div class="stat-label">作物总数</div>
+          <strong>{{ dashboard.cropCount || 0 }}</strong>
+          <span>作物总数</span>
         </div>
         <div class="stat-footer">
-          <span>生长中 {{ dashboard.growingCropCount || 0 }}</span>
+          <span>在田作物 {{ dashboard.growingCropCount || 0 }}</span>
           <span>地块 {{ dashboard.fieldCount || 0 }}</span>
         </div>
-      </div>
+      </article>
 
-      <div class="stat-card" style="--card-color: #ed6c02">
+      <article class="stat-card" style="--card-color: #ed6c02">
         <div class="stat-icon">
-          <el-icon :size="32"><List /></el-icon>
+          <el-icon :size="30"><List /></el-icon>
         </div>
         <div class="stat-info">
-          <div class="stat-value">{{ dashboard.orderCount || 0 }}</div>
-          <div class="stat-label">订单总数</div>
+          <strong>{{ dashboard.orderCount || 0 }}</strong>
+          <span>订单总数</span>
         </div>
         <div class="stat-footer">
-          <span>今日 {{ dashboard.todayOrderCount || 0 }}</span>
+          <span>今日新增 {{ dashboard.todayOrderCount || 0 }}</span>
           <span>金额 ¥{{ formatMoney(dashboard.totalOrderAmount) }}</span>
         </div>
-      </div>
+      </article>
 
-      <div class="stat-card" style="--card-color: #9c27b0">
+      <article class="stat-card" style="--card-color: #7e57c2">
         <div class="stat-icon">
-          <el-icon :size="32"><Connection /></el-icon>
+          <el-icon :size="30"><Connection /></el-icon>
         </div>
         <div class="stat-info">
-          <div class="stat-value">{{ dashboard.traceCount || 0 }}</div>
-          <div class="stat-label">溯源信息</div>
+          <strong>{{ dashboard.traceCount || 0 }}</strong>
+          <span>溯源批次</span>
         </div>
         <div class="stat-footer">
           <span>供应 {{ dashboard.supplyCount || 0 }}</span>
           <span>需求 {{ dashboard.demandCount || 0 }}</span>
         </div>
-      </div>
-    </div>
+      </article>
+    </section>
 
-    <!-- 图表区域 -->
-    <div class="chart-row">
+    <section class="chart-row">
       <div class="chart-card">
         <div class="card-header">
           <h3>订单趋势</h3>
           <el-radio-group v-model="orderDays" size="small" @change="loadOrderTrend">
-            <el-radio-button :value="7">近7天</el-radio-button>
-            <el-radio-button :value="30">近30天</el-radio-button>
+            <el-radio-button :value="7">近 7 天</el-radio-button>
+            <el-radio-button :value="30">近 30 天</el-radio-button>
           </el-radio-group>
         </div>
         <div ref="orderChartRef" class="chart-container"></div>
@@ -76,15 +74,15 @@
         <div class="card-header">
           <h3>供需趋势</h3>
           <el-radio-group v-model="supplyDays" size="small" @change="loadSupplyTrend">
-            <el-radio-button :value="7">近7天</el-radio-button>
-            <el-radio-button :value="30">近30天</el-radio-button>
+            <el-radio-button :value="7">近 7 天</el-radio-button>
+            <el-radio-button :value="30">近 30 天</el-radio-button>
           </el-radio-group>
         </div>
         <div ref="supplyChartRef" class="chart-container"></div>
       </div>
-    </div>
+    </section>
 
-    <div class="chart-row">
+    <section class="chart-row bottom">
       <div v-if="isAdmin" class="chart-card small">
         <div class="card-header">
           <h3>用户类型分布</h3>
@@ -94,177 +92,158 @@
 
       <div class="chart-card small">
         <div class="card-header">
-          <h3>作物品种分布</h3>
+          <h3>作物品类分布</h3>
         </div>
         <div ref="cropChartRef" class="chart-container"></div>
       </div>
 
-      <div class="chart-card">
+      <div class="chart-card ranking">
         <div class="card-header">
-          <h3>药材销量排行</h3>
+          <h3>药材销售排行</h3>
         </div>
         <div class="ranking-list">
-          <div
-            v-for="item in herbRanking"
-            :key="item.rank"
-            class="ranking-item"
-          >
+          <div v-for="item in herbRanking" :key="item.rank" class="ranking-item">
             <span class="rank" :class="{ top: item.rank <= 3 }">{{ item.rank }}</span>
             <span class="name">{{ item.name }}</span>
             <span class="value">¥{{ formatMoney(item.value) }}</span>
           </div>
-          <el-empty v-if="!herbRanking.length" description="暂无数据" :image-size="60" />
+          <el-empty v-if="!herbRanking.length" description="暂无排行数据" :image-size="70" />
         </div>
       </div>
-    </div>
+    </section>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import * as echarts from 'echarts'
-import { User, Cherry, List, Connection } from '@element-plus/icons-vue'
+import { Cherry, Connection, List, User } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 import {
+  getCropDistribution,
   getDashboard,
+  getHerbSalesRanking,
   getOrderTrend,
   getSupplyDemandTrend,
-  getHerbSalesRanking,
-  getCropDistribution,
   getUserTypeDistribution
 } from '@/api/statistics'
+
+const userStore = useUserStore()
+const isAdmin = computed(() => userStore.userType === 3)
 
 const dashboard = ref({})
 const herbRanking = ref([])
 const orderDays = ref(7)
 const supplyDays = ref(7)
 
-const userStore = useUserStore()
-const isAdmin = computed(() => userStore.userType === 3)
-
 const orderChartRef = ref()
 const supplyChartRef = ref()
 const userChartRef = ref()
 const cropChartRef = ref()
 
-let orderChart, supplyChart, userChart, cropChart
+let orderChart
+let supplyChart
+let userChart
+let cropChart
+let resizeHandler
 
 const formatMoney = (value) => {
-  if (!value) return '0.00'
-  return Number(value).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+  if (value === null || value === undefined || value === '') return '0.00'
+  return Number(value).toFixed(2)
 }
 
 const loadDashboard = async () => {
-  try {
-    const res = await getDashboard()
-    dashboard.value = res.data
-  } catch (e) {
-    console.error(e)
-  }
+  const res = await getDashboard()
+  dashboard.value = res.data || {}
 }
 
 const loadOrderTrend = async () => {
-  try {
-    const res = await getOrderTrend(orderDays.value)
-    const { dates, dataList } = res.data
-    orderChart?.setOption({
-      tooltip: { trigger: 'axis' },
-      legend: { data: dataList.map(d => d.name), bottom: 0 },
-      grid: { left: '3%', right: '4%', bottom: '15%', containLabel: true },
-      xAxis: { type: 'category', data: dates, boundaryGap: false },
-      yAxis: { type: 'value' },
-      series: dataList.map((d, i) => ({
-        name: d.name,
-        type: 'line',
-        smooth: true,
-        areaStyle: { opacity: 0.3 },
-        data: d.values,
-        itemStyle: { color: i === 0 ? '#2e7d32' : '#1976d2' }
-      }))
-    })
-  } catch (e) {
-    console.error(e)
-  }
+  const res = await getOrderTrend(orderDays.value)
+  const { dates = [], dataList = [] } = res.data || {}
+  orderChart?.setOption({
+    tooltip: { trigger: 'axis' },
+    legend: { data: dataList.map((item) => item.name), bottom: 0 },
+    grid: { left: '3%', right: '4%', bottom: '16%', containLabel: true },
+    xAxis: { type: 'category', data: dates, boundaryGap: false },
+    yAxis: { type: 'value' },
+    series: dataList.map((item, index) => ({
+      name: item.name,
+      type: 'line',
+      smooth: true,
+      areaStyle: { opacity: 0.22 },
+      data: item.values,
+      itemStyle: { color: index === 0 ? '#2e7d32' : '#1976d2' }
+    }))
+  })
 }
 
 const loadSupplyTrend = async () => {
-  try {
-    const res = await getSupplyDemandTrend(supplyDays.value)
-    const { dates, dataList } = res.data
-    supplyChart?.setOption({
-      tooltip: { trigger: 'axis' },
-      legend: { data: dataList.map(d => d.name), bottom: 0 },
-      grid: { left: '3%', right: '4%', bottom: '15%', containLabel: true },
-      xAxis: { type: 'category', data: dates },
-      yAxis: { type: 'value' },
-      series: dataList.map((d, i) => ({
-        name: d.name,
-        type: 'bar',
-        data: d.values,
-        itemStyle: { color: i === 0 ? '#ed6c02' : '#9c27b0', borderRadius: [4, 4, 0, 0] }
-      }))
-    })
-  } catch (e) {
-    console.error(e)
-  }
+  const res = await getSupplyDemandTrend(supplyDays.value)
+  const { dates = [], dataList = [] } = res.data || {}
+  supplyChart?.setOption({
+    tooltip: { trigger: 'axis' },
+    legend: { data: dataList.map((item) => item.name), bottom: 0 },
+    grid: { left: '3%', right: '4%', bottom: '16%', containLabel: true },
+    xAxis: { type: 'category', data: dates },
+    yAxis: { type: 'value' },
+    series: dataList.map((item, index) => ({
+      name: item.name,
+      type: 'bar',
+      data: item.values,
+      itemStyle: {
+        color: index === 0 ? '#ed6c02' : '#7e57c2',
+        borderRadius: [6, 6, 0, 0]
+      }
+    }))
+  })
 }
 
 const loadUserDistribution = async () => {
   if (!isAdmin.value) return
-  try {
-    const res = await getUserTypeDistribution()
-    const { dates, dataList } = res.data
-    const data = dates.map((name, i) => ({ name, value: dataList[0].values[i] }))
-    userChart?.setOption({
-      tooltip: { trigger: 'item' },
-      legend: { bottom: 0 },
-      series: [{
+  const res = await getUserTypeDistribution()
+  const { dates = [], dataList = [] } = res.data || {}
+  const values = dataList[0]?.values || []
+  userChart?.setOption({
+    tooltip: { trigger: 'item' },
+    legend: { bottom: 0 },
+    series: [
+      {
         type: 'pie',
-        radius: ['40%', '70%'],
-        avoidLabelOverlap: false,
+        radius: ['42%', '70%'],
         itemStyle: { borderRadius: 10, borderColor: '#fff', borderWidth: 2 },
         label: { show: false },
         emphasis: { label: { show: true, fontSize: 14, fontWeight: 'bold' } },
-        data,
-        color: ['#2e7d32', '#1976d2', '#ed6c02']
-      }]
-    })
-  } catch (e) {
-    console.error(e)
-  }
+        data: dates.map((name, index) => ({ name, value: values[index] || 0 })),
+        color: ['#2e7d32', '#c98c1a', '#d95d39', '#4f8b9e']
+      }
+    ]
+  })
 }
 
 const loadCropDistribution = async () => {
-  try {
-    const res = await getCropDistribution()
-    const { dates, dataList } = res.data
-    const data = dates.map((name, i) => ({ name, value: dataList[0].values[i] }))
-    cropChart?.setOption({
-      tooltip: { trigger: 'item' },
-      legend: { bottom: 0 },
-      series: [{
+  const res = await getCropDistribution()
+  const { dates = [], dataList = [] } = res.data || {}
+  const values = dataList[0]?.values || []
+  cropChart?.setOption({
+    tooltip: { trigger: 'item' },
+    legend: { bottom: 0 },
+    series: [
+      {
         type: 'pie',
-        radius: ['40%', '70%'],
-        avoidLabelOverlap: false,
+        radius: ['42%', '70%'],
         itemStyle: { borderRadius: 10, borderColor: '#fff', borderWidth: 2 },
         label: { show: false },
         emphasis: { label: { show: true, fontSize: 14, fontWeight: 'bold' } },
-        data,
-        color: ['#4caf50', '#8bc34a', '#cddc39', '#ffeb3b', '#ffc107', '#ff9800']
-      }]
-    })
-  } catch (e) {
-    console.error(e)
-  }
+        data: dates.map((name, index) => ({ name, value: values[index] || 0 })),
+        color: ['#4caf50', '#8bc34a', '#cddc39', '#ffca28', '#ff8f00', '#5c6bc0']
+      }
+    ]
+  })
 }
 
 const loadHerbRanking = async () => {
-  try {
-    const res = await getHerbSalesRanking(5)
-    herbRanking.value = res.data || []
-  } catch (e) {
-    console.error(e)
-  }
+  const res = await getHerbSalesRanking(5)
+  herbRanking.value = res.data || []
 }
 
 const initCharts = () => {
@@ -273,27 +252,33 @@ const initCharts = () => {
   if (isAdmin.value && userChartRef.value) {
     userChart = echarts.init(userChartRef.value)
   }
-  cropChart = echarts.init(cropChartRef.value)
+  if (cropChartRef.value) {
+    cropChart = echarts.init(cropChartRef.value)
+  }
 
-  window.addEventListener('resize', () => {
+  resizeHandler = () => {
     orderChart?.resize()
     supplyChart?.resize()
     userChart?.resize()
     cropChart?.resize()
-  })
+  }
+  window.addEventListener('resize', resizeHandler)
 }
 
-onMounted(() => {
+onMounted(async () => {
   initCharts()
-  loadDashboard()
-  loadOrderTrend()
-  loadSupplyTrend()
-  loadUserDistribution()
-  loadCropDistribution()
-  loadHerbRanking()
+  await Promise.all([
+    loadDashboard(),
+    loadOrderTrend(),
+    loadSupplyTrend(),
+    loadUserDistribution(),
+    loadCropDistribution(),
+    loadHerbRanking()
+  ])
 })
 
 onUnmounted(() => {
+  window.removeEventListener('resize', resizeHandler)
   orderChart?.dispose()
   supplyChart?.dispose()
   userChart?.dispose()
@@ -310,37 +295,35 @@ onUnmounted(() => {
 
 .stat-cards {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 20px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
 }
 
 .stat-card {
-  background: white;
-  border-radius: 12px;
-  padding: 24px;
+  position: relative;
+  overflow: hidden;
+  padding: 22px;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 10px 26px rgba(31, 47, 35, 0.08);
   display: flex;
   flex-direction: column;
   gap: 16px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
-  position: relative;
-  overflow: hidden;
 }
 
 .stat-card::before {
   content: '';
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 4px;
-  height: 100%;
+  inset: 0 auto 0 0;
+  width: 5px;
   background: var(--card-color);
 }
 
 .stat-icon {
-  width: 56px;
-  height: 56px;
-  border-radius: 12px;
-  background: color-mix(in srgb, var(--card-color) 15%, transparent);
+  width: 54px;
+  height: 54px;
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--card-color) 14%, #ffffff);
   color: var(--card-color);
   display: flex;
   align-items: center;
@@ -348,63 +331,64 @@ onUnmounted(() => {
 }
 
 .stat-info {
-  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
-.stat-value {
+.stat-info strong {
   font-size: 32px;
-  font-weight: 600;
-  color: #303133;
+  color: #243229;
 }
 
-.stat-label {
-  font-size: 14px;
-  color: #909399;
-  margin-top: 4px;
+.stat-info span,
+.stat-footer span {
+  color: #778475;
 }
 
 .stat-footer {
   display: flex;
   justify-content: space-between;
-  padding-top: 12px;
-  border-top: 1px solid #f0f0f0;
-  font-size: 12px;
-  color: #909399;
+  gap: 12px;
+  padding-top: 10px;
+  border-top: 1px solid #eef1ed;
+  font-size: 13px;
 }
 
 .chart-row {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 20px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
 }
 
-.chart-row:last-child {
-  grid-template-columns: 1fr 1fr 1.5fr;
+.chart-row.bottom {
+  grid-template-columns: 1fr 1fr 1.3fr;
 }
 
 .chart-card {
-  background: white;
-  border-radius: 12px;
   padding: 20px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 10px 26px rgba(31, 47, 35, 0.08);
 }
 
-.chart-card.small {
-  min-height: 300px;
+.chart-card.small,
+.chart-card.ranking {
+  min-height: 320px;
 }
 
 .card-header {
   display: flex;
   justify-content: space-between;
+  gap: 16px;
   align-items: center;
-  margin-bottom: 16px;
+  margin-bottom: 14px;
 }
 
 .card-header h3 {
-  font-size: 16px;
-  font-weight: 600;
-  color: #303133;
   margin: 0;
+  color: #24322a;
+  font-size: 16px;
 }
 
 .chart-container {
@@ -422,57 +406,52 @@ onUnmounted(() => {
 .ranking-item {
   display: flex;
   align-items: center;
-  padding: 12px 16px;
-  background: #f5f7fa;
-  border-radius: 8px;
-  transition: all 0.3s;
-}
-
-.ranking-item:hover {
-  background: #e8f5e9;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: #f6f9f4;
 }
 
 .rank {
-  width: 24px;
-  height: 24px;
+  width: 26px;
+  height: 26px;
   border-radius: 50%;
-  background: #dcdfe6;
-  color: #606266;
+  background: #dfe5dc;
+  color: #61705e;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 12px;
-  font-weight: 600;
-  margin-right: 12px;
+  font-weight: 700;
 }
 
 .rank.top {
-  background: linear-gradient(135deg, #2e7d32, #4caf50);
-  color: white;
+  background: linear-gradient(135deg, #2e7d32 0%, #8db24f 100%);
+  color: #fff;
 }
 
 .name {
   flex: 1;
-  font-size: 14px;
-  color: #303133;
+  color: #2b3d2f;
 }
 
 .value {
-  font-size: 14px;
-  font-weight: 600;
-  color: #2e7d32;
+  color: #c5691f;
+  font-weight: 700;
 }
 
 @media (max-width: 1200px) {
-  .stat-cards {
-    grid-template-columns: repeat(2, 1fr);
+  .stat-cards,
+  .chart-row,
+  .chart-row.bottom {
+    grid-template-columns: 1fr 1fr;
   }
+}
 
-  .chart-row {
-    grid-template-columns: 1fr;
-  }
-
-  .chart-row:last-child {
+@media (max-width: 768px) {
+  .stat-cards,
+  .chart-row,
+  .chart-row.bottom {
     grid-template-columns: 1fr;
   }
 }

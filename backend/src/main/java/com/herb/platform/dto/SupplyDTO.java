@@ -11,13 +11,13 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 
 /**
- * 供应信息请求DTO
+ * Supply request.
  */
 @Data
 @ApiModel("供应信息请求")
 public class SupplyDTO {
 
-    @ApiModelProperty("供应ID（编辑时必填）")
+    @ApiModelProperty("供应ID")
     private Long id;
 
     @ApiModelProperty("关联作物ID")
@@ -39,8 +39,16 @@ public class SupplyDTO {
     private BigDecimal supplyQuantity;
 
     @DecimalMin(value = "0", message = "价格不能小于0")
-    @ApiModelProperty("价格(元/kg)")
+    @ApiModelProperty("标准单价(元/kg)")
     private BigDecimal price;
+
+    @DecimalMin(value = "0", message = "批发价不能小于0")
+    @ApiModelProperty("批发价(元/kg)")
+    private BigDecimal wholesalePrice;
+
+    @DecimalMin(value = "0", message = "起批量不能小于0")
+    @ApiModelProperty("起批量(kg)")
+    private BigDecimal wholesaleMinQuantity;
 
     @ApiModelProperty("价格可议: 0-不可议 1-可议")
     private Integer priceNegotiable;
@@ -57,10 +65,10 @@ public class SupplyDTO {
     @ApiModelProperty("产品描述")
     private String description;
 
-    @ApiModelProperty("产品图片(JSON数组)")
+    @ApiModelProperty("产品图片")
     private String images;
 
-    @ApiModelProperty("认证证书(JSON数组)")
+    @ApiModelProperty("认证证书")
     private String certification;
 
     @ApiModelProperty("联系人")

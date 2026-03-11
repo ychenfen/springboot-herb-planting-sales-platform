@@ -12,7 +12,13 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import lombok.RequiredArgsConstructor;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
@@ -20,13 +26,13 @@ import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
 
 /**
- * 收藏控制器
+ * Favorite controller.
  */
 @Api(tags = "收藏管理")
 @RestController
 @RequestMapping("/favorite")
 @Validated
-@RequireUserType({Constants.USER_TYPE_FARMER, Constants.USER_TYPE_BUYER})
+@RequireUserType({Constants.USER_TYPE_FARMER, Constants.USER_TYPE_MERCHANT, Constants.USER_TYPE_ADMIN, Constants.USER_TYPE_USER})
 @RequiredArgsConstructor
 public class FavoriteController {
 
@@ -36,8 +42,8 @@ public class FavoriteController {
     @GetMapping("/page")
     public Result<IPage<FavoriteVO>> page(
             @ApiParam("收藏类型") @RequestParam(required = false) Integer targetType,
-            @ApiParam("页码") @RequestParam(defaultValue = "1") @Min(value = 1, message = "页码必须大于0") int pageNum,
-            @ApiParam("每页数量") @RequestParam(defaultValue = "10") @Min(value = 1, message = "每页数量必须大于0") @Max(value = 100, message = "每页数量不能超过100") int pageSize,
+            @ApiParam("页码") @RequestParam(defaultValue = "1") @Min(1) int pageNum,
+            @ApiParam("每页数量") @RequestParam(defaultValue = "10") @Min(1) @Max(100) int pageSize,
             HttpServletRequest request) {
         Long userId = (Long) request.getAttribute("userId");
         return Result.success(favoriteService.pageByUser(userId, targetType, pageNum, pageSize));

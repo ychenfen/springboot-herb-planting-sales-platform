@@ -46,7 +46,8 @@ public class StatisticsServiceImpl implements StatisticsService {
             vo.setFarmerCount(userMapper.selectCount(new LambdaQueryWrapper<User>()
                     .eq(User::getUserType, 1).eq(User::getDeleted, 0)));
             vo.setBuyerCount(userMapper.selectCount(new LambdaQueryWrapper<User>()
-                    .eq(User::getUserType, 2).eq(User::getDeleted, 0)));
+                    .in(User::getUserType, Constants.USER_TYPE_MERCHANT, Constants.USER_TYPE_USER)
+                    .eq(User::getDeleted, 0)));
         }
 
         // 地块和作物统计
@@ -87,9 +88,9 @@ public class StatisticsServiceImpl implements StatisticsService {
         // 订单统计
         LambdaQueryWrapper<Order> orderWrapper = new LambdaQueryWrapper<>();
         if (userType != null && userId != null) {
-            if (userType == 1) {
+            if (userType == Constants.USER_TYPE_FARMER) {
                 orderWrapper.eq(Order::getSellerId, userId);
-            } else if (userType == 2) {
+            } else if (userType == Constants.USER_TYPE_MERCHANT || userType == Constants.USER_TYPE_USER) {
                 orderWrapper.eq(Order::getBuyerId, userId);
             }
         }
@@ -313,9 +314,9 @@ public class StatisticsServiceImpl implements StatisticsService {
 
         Map<Long, BigDecimal> yieldMap = new HashMap<>();
         for (Crop crop : crops) {
-            Long userId = crop.getUserId();
+            Long cropUserId = crop.getUserId();
             BigDecimal yield = crop.getActualYield() != null ? crop.getActualYield() : BigDecimal.ZERO;
-            yieldMap.merge(userId, yield, BigDecimal::add);
+            yieldMap.merge(cropUserId, yield, BigDecimal::add);
         }
 
         List<RankingVO> rankings = new ArrayList<>();
@@ -374,15 +375,18 @@ public class StatisticsServiceImpl implements StatisticsService {
         StatChartVO vo = new StatChartVO();
 
         Long farmerCount = userMapper.selectCount(new LambdaQueryWrapper<User>()
-                .eq(User::getUserType, 1).eq(User::getDeleted, 0));
-        Long buyerCount = userMapper.selectCount(new LambdaQueryWrapper<User>()
-                .eq(User::getUserType, 2).eq(User::getDeleted, 0));
+                .eq(User::getUserType, Constants.USER_TYPE_FARMER).eq(User::getDeleted, 0));
+        Long merchantCount = userMapper.selectCount(new LambdaQueryWrapper<User>()
+                .eq(User::getUserType, Constants.USER_TYPE_MERCHANT).eq(User::getDeleted, 0));
         Long adminCount = userMapper.selectCount(new LambdaQueryWrapper<User>()
-                .eq(User::getUserType, 3).eq(User::getDeleted, 0));
+                .eq(User::getUserType, Constants.USER_TYPE_ADMIN).eq(User::getDeleted, 0));
+        Long normalUserCount = userMapper.selectCount(new LambdaQueryWrapper<User>()
+                .eq(User::getUserType, Constants.USER_TYPE_USER).eq(User::getDeleted, 0));
 
-        vo.setDates(Arrays.asList("种植户", "采购商", "管理员"));
+        vo.setDates(Arrays.asList("种植户", "商家", "管理员", "普通用户"));
         vo.setDataList(Collections.singletonList(
-                new StatChartVO.ChartData("用户数量", Arrays.asList(farmerCount, buyerCount, adminCount))
+                new StatChartVO.ChartData("用户数量",
+                        Arrays.asList(farmerCount, merchantCount, adminCount, normalUserCount))
         ));
 
         return vo;
@@ -430,6 +434,6 @@ public class StatisticsServiceImpl implements StatisticsService {
     }
 
     private boolean isBuyer(Integer userType) {
-        return userType != null && userType == Constants.USER_TYPE_BUYER;
+        return userType != null && (userType == Constants.USER_TYPE_MERCHANT || userType == Constants.USER_TYPE_USER);
     }
 }

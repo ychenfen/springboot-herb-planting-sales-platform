@@ -1,23 +1,23 @@
 package com.herb.platform.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.herb.platform.common.Constants;
 import com.herb.platform.common.ResponseCode;
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.herb.platform.dto.LoginDTO;
 import com.herb.platform.dto.RegisterDTO;
 import com.herb.platform.dto.UpdatePasswordDTO;
 import com.herb.platform.dto.UpdateProfileDTO;
 import com.herb.platform.entity.Role;
-import com.herb.platform.entity.UserRole;
 import com.herb.platform.entity.User;
+import com.herb.platform.entity.UserRole;
 import com.herb.platform.exception.BusinessException;
 import com.herb.platform.mapper.RoleMapper;
-import com.herb.platform.mapper.UserRoleMapper;
 import com.herb.platform.mapper.UserMapper;
+import com.herb.platform.mapper.UserRoleMapper;
 import com.herb.platform.service.AuthService;
+import com.herb.platform.service.TokenStoreService;
 import com.herb.platform.utils.JwtUtil;
 import com.herb.platform.utils.PasswordUtil;
-import com.herb.platform.utils.RedisUtil;
 import com.herb.platform.vo.LoginVO;
 import com.herb.platform.vo.UserVO;
 import lombok.RequiredArgsConstructor;
@@ -27,12 +27,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
- * 认证服务实现类
+ * Authentication service implementation.
  */
 @Slf4j
 @Service
@@ -44,39 +45,31 @@ public class AuthServiceImpl implements AuthService {
     private final UserRoleMapper userRoleMapper;
     private final JwtUtil jwtUtil;
     private final PasswordUtil passwordUtil;
-    private final RedisUtil redisUtil;
+    private final TokenStoreService tokenStoreService;
 
     @Override
     public LoginVO login(LoginDTO loginDTO, String ip) {
-        // 查询用户
         User user = userMapper.selectByUsername(loginDTO.getUsername());
         if (user == null) {
             throw new BusinessException(ResponseCode.ACCOUNT_NOT_EXIST);
         }
 
-        // 验证密码
         if (!passwordUtil.verify(loginDTO.getPassword(), user.getPassword())) {
             throw new BusinessException(ResponseCode.LOGIN_FAILED);
         }
 
-        // 检查用户状态
         if (user.getStatus() == Constants.USER_STATUS_DISABLED) {
             throw new BusinessException(ResponseCode.ACCOUNT_DISABLED);
         }
 
-        // 生成Token
         String token = jwtUtil.generateToken(user.getId(), user.getUsername(), user.getUserType());
+        tokenStoreService.set(Constants.REDIS_TOKEN_PREFIX + user.getId(),
+                token, Constants.TOKEN_EXPIRE_TIME, TimeUnit.SECONDS);
 
-        // 存入Redis
-        String tokenKey = Constants.REDIS_TOKEN_PREFIX + user.getId();
-        redisUtil.set(tokenKey, token, Constants.TOKEN_EXPIRE_TIME, TimeUnit.SECONDS);
-
-        // 更新登录信息
         user.setLastLoginTime(LocalDateTime.now());
         user.setLastLoginIp(ip);
         userMapper.updateById(user);
 
-        // 构建返回对象
         LoginVO loginVO = new LoginVO();
         loginVO.setToken(token);
         loginVO.setUserId(user.getId());
@@ -85,31 +78,23 @@ public class AuthServiceImpl implements AuthService {
         loginVO.setAvatar(user.getAvatar());
         loginVO.setUserType(user.getUserType());
         loginVO.setUserTypeName(getUserTypeName(user.getUserType()));
-
-        log.info("用户登录成功: username={}, ip={}", user.getUsername(), ip);
         return loginVO;
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void register(RegisterDTO registerDTO) {
-        // 验证确认密码
         if (registerDTO.getConfirmPassword() != null
                 && !registerDTO.getPassword().equals(registerDTO.getConfirmPassword())) {
             throw new BusinessException("两次输入的密码不一致");
         }
-
-        // 检查用户名是否存在
         if (userMapper.countByUsername(registerDTO.getUsername()) > 0) {
             throw new BusinessException(ResponseCode.USER_EXISTS);
         }
-
-        // 检查手机号是否存在
         if (registerDTO.getPhone() != null && userMapper.countByPhone(registerDTO.getPhone()) > 0) {
             throw new BusinessException(ResponseCode.PHONE_EXISTS);
         }
 
-        // 创建用户
         User user = new User();
         user.setUsername(registerDTO.getUsername());
         user.setPassword(passwordUtil.encrypt(registerDTO.getPassword()));
@@ -120,10 +105,10 @@ public class AuthServiceImpl implements AuthService {
         user.setStatus(Constants.USER_STATUS_NORMAL);
         user.setCreateTime(LocalDateTime.now());
         user.setUpdateTime(LocalDateTime.now());
-
         userMapper.insert(user);
+
         assignDefaultRole(user.getId(), user.getUserType());
-        log.info("用户注册成功: username={}", user.getUsername());
+        log.info("User registered: {}", user.getUsername());
     }
 
     @Override
@@ -143,9 +128,7 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public void logout(Long userId) {
-        String tokenKey = Constants.REDIS_TOKEN_PREFIX + userId;
-        redisUtil.delete(tokenKey);
-        log.info("用户退出登录: userId={}", userId);
+        tokenStoreService.delete(Constants.REDIS_TOKEN_PREFIX + userId);
     }
 
     @Override
@@ -155,11 +138,9 @@ public class AuthServiceImpl implements AuthService {
         if (user == null || user.getDeleted() == 1) {
             throw new BusinessException(ResponseCode.ACCOUNT_NOT_EXIST);
         }
-
         if (!passwordUtil.verify(dto.getOldPassword(), user.getPassword())) {
             throw new BusinessException(ResponseCode.OLD_PASSWORD_ERROR);
         }
-
         if (!dto.getNewPassword().equals(dto.getConfirmPassword())) {
             throw new BusinessException("两次输入的密码不一致");
         }
@@ -167,10 +148,7 @@ public class AuthServiceImpl implements AuthService {
         user.setPassword(passwordUtil.encrypt(dto.getNewPassword()));
         user.setUpdateTime(LocalDateTime.now());
         userMapper.updateById(user);
-
-        // 密码修改后使旧Token失效
-        String tokenKey = Constants.REDIS_TOKEN_PREFIX + userId;
-        redisUtil.delete(tokenKey);
+        tokenStoreService.delete(Constants.REDIS_TOKEN_PREFIX + userId);
     }
 
     @Override
@@ -215,41 +193,47 @@ public class AuthServiceImpl implements AuthService {
         switch (userType) {
             case Constants.USER_TYPE_FARMER:
                 return "种植户";
-            case Constants.USER_TYPE_BUYER:
-                return "采购商";
+            case Constants.USER_TYPE_MERCHANT:
+                return "商家";
             case Constants.USER_TYPE_ADMIN:
                 return "管理员";
+            case Constants.USER_TYPE_USER:
+                return "普通用户";
             default:
                 return "";
         }
     }
 
     private void assignDefaultRole(Long userId, Integer userType) {
-        String roleCode;
+        List<String> roleCodes;
         if (userType == null) {
             return;
         }
         switch (userType) {
             case Constants.USER_TYPE_FARMER:
-                roleCode = "ROLE_FARMER";
+                roleCodes = Arrays.asList("ROLE_FARMER");
                 break;
-            case Constants.USER_TYPE_BUYER:
-                roleCode = "ROLE_BUYER";
+            case Constants.USER_TYPE_MERCHANT:
+                roleCodes = Arrays.asList("ROLE_MERCHANT", "ROLE_BUYER");
                 break;
             case Constants.USER_TYPE_ADMIN:
-                roleCode = "ROLE_ADMIN";
+                roleCodes = Arrays.asList("ROLE_ADMIN");
+                break;
+            case Constants.USER_TYPE_USER:
+                roleCodes = Arrays.asList("ROLE_USER");
                 break;
             default:
-                roleCode = null;
+                roleCodes = null;
         }
-        if (roleCode == null) {
+        if (roleCodes == null || roleCodes.isEmpty()) {
             return;
         }
 
         Role role = roleMapper.selectOne(new LambdaQueryWrapper<Role>()
-                .eq(Role::getRoleCode, roleCode)
+                .in(Role::getRoleCode, roleCodes)
                 .eq(Role::getDeleted, 0)
-                .eq(Role::getStatus, 1));
+                .eq(Role::getStatus, 1)
+                .last("LIMIT 1"));
         if (role == null) {
             throw new BusinessException(ResponseCode.DATA_NOT_FOUND, "默认角色不存在");
         }

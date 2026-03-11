@@ -12,14 +12,21 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import lombok.RequiredArgsConstructor;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
 
 /**
- * 订单控制器
+ * Order controller.
  */
 @Api(tags = "订单管理")
 @RestController
@@ -32,32 +39,33 @@ public class OrderController {
 
     @ApiOperation("分页查询订单")
     @GetMapping("/page")
-    @RequireUserType({Constants.USER_TYPE_FARMER, Constants.USER_TYPE_BUYER})
+    @RequireUserType({Constants.USER_TYPE_FARMER, Constants.USER_TYPE_MERCHANT, Constants.USER_TYPE_ADMIN, Constants.USER_TYPE_USER})
     public Result<IPage<OrderVO>> page(
+            @ApiParam("订单号") @RequestParam(required = false) String orderNo,
             @ApiParam("订单状态") @RequestParam(required = false) Integer orderStatus,
-            @ApiParam("页码") @RequestParam(defaultValue = "1") @Min(value = 1, message = "页码必须大于0") int pageNum,
-            @ApiParam("每页数量") @RequestParam(defaultValue = "10") @Min(value = 1, message = "每页数量必须大于0") @Max(value = 100, message = "每页数量不能超过100") int pageSize,
+            @ApiParam("页码") @RequestParam(defaultValue = "1") @Min(1) int pageNum,
+            @ApiParam("每页数量") @RequestParam(defaultValue = "10") @Min(1) @Max(100) int pageSize,
             HttpServletRequest request) {
         Long userId = (Long) request.getAttribute("userId");
         Integer userType = (Integer) request.getAttribute("userType");
-        IPage<OrderVO> page = orderService.page(userId, userType, orderStatus, pageNum, pageSize);
-        return Result.success(page);
+        return Result.success(orderService.page(userId, userType, orderNo, orderStatus, pageNum, pageSize));
     }
 
     @ApiOperation("查询订单详情")
     @GetMapping("/{id}")
-    public Result<OrderVO> getById(@PathVariable Long id) {
-        OrderVO orderVO = orderService.getById(id);
-        return Result.success(orderVO);
+    @RequireUserType({Constants.USER_TYPE_FARMER, Constants.USER_TYPE_MERCHANT, Constants.USER_TYPE_ADMIN, Constants.USER_TYPE_USER})
+    public Result<OrderVO> getById(@PathVariable Long id, HttpServletRequest request) {
+        Long userId = (Long) request.getAttribute("userId");
+        Integer userType = (Integer) request.getAttribute("userType");
+        return Result.success(orderService.getById(userId, userType, id));
     }
 
     @ApiOperation("创建订单")
     @PostMapping
-    @RequireUserType(Constants.USER_TYPE_BUYER)
+    @RequireUserType({Constants.USER_TYPE_MERCHANT, Constants.USER_TYPE_USER})
     public Result<Long> createOrder(@Validated @RequestBody OrderDTO dto, HttpServletRequest request) {
         Long userId = (Long) request.getAttribute("userId");
-        Long orderId = orderService.createOrder(userId, dto);
-        return Result.success(orderId);
+        return Result.success(orderService.createOrder(userId, dto));
     }
 
     @ApiOperation("卖家确认订单")
@@ -84,7 +92,7 @@ public class OrderController {
 
     @ApiOperation("买家确认收货")
     @PutMapping("/{id}/complete")
-    @RequireUserType(Constants.USER_TYPE_BUYER)
+    @RequireUserType({Constants.USER_TYPE_MERCHANT, Constants.USER_TYPE_USER})
     public Result<Void> completeOrder(@PathVariable Long id, HttpServletRequest request) {
         Long userId = (Long) request.getAttribute("userId");
         orderService.completeOrder(userId, id);
@@ -93,7 +101,7 @@ public class OrderController {
 
     @ApiOperation("取消订单")
     @PutMapping("/{id}/cancel")
-    @RequireUserType({Constants.USER_TYPE_FARMER, Constants.USER_TYPE_BUYER})
+    @RequireUserType({Constants.USER_TYPE_FARMER, Constants.USER_TYPE_MERCHANT, Constants.USER_TYPE_ADMIN, Constants.USER_TYPE_USER})
     public Result<Void> cancelOrder(
             @PathVariable Long id,
             @ApiParam("取消原因") @RequestParam(required = false) String cancelReason,

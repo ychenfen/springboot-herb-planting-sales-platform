@@ -14,17 +14,21 @@ import com.herb.platform.mapper.OrderMapper;
 import com.herb.platform.mapper.SupplyMapper;
 import com.herb.platform.mapper.UserMapper;
 import com.herb.platform.service.OrderService;
+import com.herb.platform.vo.OrderTrackVO;
 import com.herb.platform.vo.OrderVO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
- * 订单服务实现类
+ * Order service implementation.
  */
 @Service
 @RequiredArgsConstructor
@@ -35,33 +39,37 @@ public class OrderServiceImpl implements OrderService {
     private final UserMapper userMapper;
 
     @Override
-    public IPage<OrderVO> page(Long userId, Integer userType, Integer orderStatus, int pageNum, int pageSize) {
+    public IPage<OrderVO> page(Long userId, Integer userType, String orderNo, Integer orderStatus, int pageNum, int pageSize) {
         Page<Order> page = new Page<>(pageNum, pageSize);
         LambdaQueryWrapper<Order> wrapper = new LambdaQueryWrapper<>();
 
-        // 根据用户类型查询
         if (userType == Constants.USER_TYPE_FARMER) {
             wrapper.eq(Order::getSellerId, userId);
-        } else if (userType == Constants.USER_TYPE_BUYER) {
+        } else if (userType == Constants.USER_TYPE_MERCHANT || userType == Constants.USER_TYPE_USER) {
             wrapper.eq(Order::getBuyerId, userId);
-        } else {
-            // 管理员可以查看所有
         }
 
+        if (StringUtils.hasText(orderNo)) {
+            wrapper.like(Order::getOrderNo, orderNo);
+        }
         if (orderStatus != null) {
             wrapper.eq(Order::getOrderStatus, orderStatus);
         }
         wrapper.orderByDesc(Order::getCreateTime);
-
-        IPage<Order> orderPage = orderMapper.selectPage(page, wrapper);
-        return orderPage.convert(this::convertToVO);
+        return orderMapper.selectPage(page, wrapper).convert(this::convertToVO);
     }
 
     @Override
-    public OrderVO getById(Long id) {
+    public OrderVO getById(Long userId, Integer userType, Long id) {
         Order order = orderMapper.selectById(id);
         if (order == null) {
             throw new BusinessException(ResponseCode.DATA_NOT_FOUND);
+        }
+
+        boolean isAdmin = userType != null && userType == Constants.USER_TYPE_ADMIN;
+        boolean isParticipant = order.getBuyerId().equals(userId) || order.getSellerId().equals(userId);
+        if (!isAdmin && !isParticipant) {
+            throw new BusinessException(ResponseCode.FORBIDDEN, "无权查看该订单");
         }
         return convertToVO(order);
     }
@@ -69,7 +77,6 @@ public class OrderServiceImpl implements OrderService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public Long createOrder(Long buyerId, OrderDTO dto) {
-        // 查询供应信息
         Supply supply = supplyMapper.selectById(dto.getSupplyId());
         if (supply == null) {
             throw new BusinessException("供应信息不存在");
@@ -77,17 +84,18 @@ public class OrderServiceImpl implements OrderService {
         if (dto.getQuantity() == null || dto.getQuantity().compareTo(BigDecimal.ZERO) <= 0) {
             throw new BusinessException("购买数量必须大于0");
         }
-        if (supply.getStatus() != 1) {
+        if (supply.getStatus() != Constants.SUPPLY_STATUS_ACTIVE) {
             throw new BusinessException("该商品已下架或售罄");
         }
         if (supply.getPrice() == null) {
-            throw new BusinessException("供应价格未设置，无法下单");
+            throw new BusinessException("供应价格未配置");
         }
         if (supply.getRemainingQuantity() == null || supply.getRemainingQuantity().compareTo(dto.getQuantity()) < 0) {
             throw new BusinessException("库存不足");
         }
 
-        // 创建订单
+        BigDecimal appliedUnitPrice = resolveUnitPrice(supply, dto.getQuantity());
+
         Order order = new Order();
         order.setOrderNo(orderMapper.generateOrderNo());
         order.setSupplyId(supply.getId());
@@ -96,8 +104,8 @@ public class OrderServiceImpl implements OrderService {
         order.setHerbName(supply.getHerbName());
         order.setHerbVariety(supply.getHerbVariety());
         order.setQuantity(dto.getQuantity());
-        order.setUnitPrice(supply.getPrice());
-        order.setTotalAmount(supply.getPrice().multiply(dto.getQuantity()));
+        order.setUnitPrice(appliedUnitPrice);
+        order.setTotalAmount(appliedUnitPrice.multiply(dto.getQuantity()));
         order.setOrderStatus(Constants.ORDER_STATUS_PENDING);
         order.setPaymentStatus(0);
         order.setDeliveryAddress(dto.getDeliveryAddress());
@@ -106,22 +114,18 @@ public class OrderServiceImpl implements OrderService {
         order.setRemark(dto.getRemark());
         order.setCreateTime(LocalDateTime.now());
         order.setUpdateTime(LocalDateTime.now());
-
         orderMapper.insert(order);
 
-        // 扣减库存
         int rows = supplyMapper.decrementRemainingQuantity(supply.getId(), dto.getQuantity());
         if (rows == 0) {
             throw new BusinessException("库存不足");
         }
 
-        // 检查是否售罄
         Supply updatedSupply = supplyMapper.selectById(supply.getId());
         if (updatedSupply.getRemainingQuantity().compareTo(BigDecimal.ZERO) <= 0) {
-            updatedSupply.setStatus(2); // 已售罄
+            updatedSupply.setStatus(Constants.SUPPLY_STATUS_SOLD_OUT);
             supplyMapper.updateById(updatedSupply);
         }
-
         return order.getId();
     }
 
@@ -182,7 +186,7 @@ public class OrderServiceImpl implements OrderService {
         }
 
         order.setOrderStatus(Constants.ORDER_STATUS_COMPLETED);
-        order.setPaymentStatus(1); // 已支付
+        order.setPaymentStatus(1);
         order.setCompleteTime(LocalDateTime.now());
         order.setUpdateTime(LocalDateTime.now());
         orderMapper.updateById(order);
@@ -208,12 +212,11 @@ public class OrderServiceImpl implements OrderService {
         order.setUpdateTime(LocalDateTime.now());
         orderMapper.updateById(order);
 
-        // 恢复库存
         Supply supply = supplyMapper.selectById(order.getSupplyId());
         if (supply != null) {
             supply.setRemainingQuantity(supply.getRemainingQuantity().add(order.getQuantity()));
-            if (supply.getStatus() == 2) {
-                supply.setStatus(1);
+            if (supply.getStatus() == Constants.SUPPLY_STATUS_SOLD_OUT) {
+                supply.setStatus(Constants.SUPPLY_STATUS_ACTIVE);
             }
             supplyMapper.updateById(supply);
         }
@@ -224,6 +227,7 @@ public class OrderServiceImpl implements OrderService {
         BeanUtils.copyProperties(order, vo);
         vo.setOrderStatusName(getOrderStatusName(order.getOrderStatus()));
         vo.setPaymentStatusName(getPaymentStatusName(order.getPaymentStatus()));
+        vo.setTrackingNodes(buildTrackingNodes(order));
 
         User seller = userMapper.selectById(order.getSellerId());
         if (seller != null) {
@@ -235,29 +239,102 @@ public class OrderServiceImpl implements OrderService {
             vo.setBuyerName(buyer.getRealName() != null ? buyer.getRealName() : buyer.getUsername());
         }
 
+        Supply supply = supplyMapper.selectById(order.getSupplyId());
+        if (supply != null
+                && supply.getWholesalePrice() != null
+                && supply.getWholesaleMinQuantity() != null
+                && order.getQuantity() != null
+                && order.getQuantity().compareTo(supply.getWholesaleMinQuantity()) >= 0) {
+            vo.setPricingMode("批发价");
+        } else {
+            vo.setPricingMode("标准价");
+        }
         return vo;
     }
 
+    private BigDecimal resolveUnitPrice(Supply supply, BigDecimal quantityKg) {
+        if (supply.getWholesalePrice() != null
+                && supply.getWholesaleMinQuantity() != null
+                && quantityKg.compareTo(supply.getWholesaleMinQuantity()) >= 0) {
+            return supply.getWholesalePrice();
+        }
+        return supply.getPrice();
+    }
+
+    private List<OrderTrackVO> buildTrackingNodes(Order order) {
+        List<OrderTrackVO> tracks = new ArrayList<>();
+        tracks.add(buildTrack(1, "下单成功", "买家已提交订单，等待卖家确认", order.getCreateTime()));
+        if (order.getConfirmTime() != null) {
+            tracks.add(buildTrack(2, "卖家已确认", "卖家已确认接单，正在备货", order.getConfirmTime()));
+        }
+        if (order.getDeliveryTime() != null) {
+            String logistics = "";
+            if (StringUtils.hasText(order.getLogisticsCompany()) || StringUtils.hasText(order.getLogisticsNo())) {
+                logistics = "，物流: " + defaultText(order.getLogisticsCompany()) + " " + defaultText(order.getLogisticsNo());
+            }
+            tracks.add(buildTrack(3, "商品已发货", "物流信息已更新" + logistics, order.getDeliveryTime()));
+        }
+        if (order.getCompleteTime() != null) {
+            tracks.add(buildTrack(4, "交易已完成", "买家已确认收货", order.getCompleteTime()));
+        }
+        if (order.getCancelTime() != null) {
+            tracks.add(buildTrack(5, "订单已取消", defaultText(order.getCancelReason(), "订单已取消"), order.getCancelTime()));
+        }
+        return tracks;
+    }
+
+    private OrderTrackVO buildTrack(Integer status, String title, String description, LocalDateTime time) {
+        OrderTrackVO track = new OrderTrackVO();
+        track.setStatus(status);
+        track.setTitle(title);
+        track.setDescription(description);
+        track.setTime(time);
+        return track;
+    }
+
+    private String defaultText(String value) {
+        return value == null ? "" : value.trim();
+    }
+
+    private String defaultText(String value, String fallback) {
+        return StringUtils.hasText(value) ? value : fallback;
+    }
+
     private String getOrderStatusName(Integer status) {
-        if (status == null) return "";
+        if (status == null) {
+            return "";
+        }
         switch (status) {
-            case 1: return "待确认";
-            case 2: return "已确认";
-            case 3: return "配送中";
-            case 4: return "已完成";
-            case 5: return "已取消";
-            case 6: return "已退款";
-            default: return "";
+            case 1:
+                return "待确认";
+            case 2:
+                return "待发货";
+            case 3:
+                return "待收货";
+            case 4:
+                return "已完成";
+            case 5:
+                return "已取消";
+            case 6:
+                return "已退款";
+            default:
+                return "";
         }
     }
 
     private String getPaymentStatusName(Integer status) {
-        if (status == null) return "";
+        if (status == null) {
+            return "";
+        }
         switch (status) {
-            case 0: return "未支付";
-            case 1: return "已支付";
-            case 2: return "已退款";
-            default: return "";
+            case 0:
+                return "未支付";
+            case 1:
+                return "已支付";
+            case 2:
+                return "已退款";
+            default:
+                return "";
         }
     }
 }

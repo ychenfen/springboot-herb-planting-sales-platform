@@ -1,17 +1,19 @@
 import request from '@/utils/request'
 
-// 供应信息 - 供应大厅
 export function getSupplyPage(params) {
   return request.get('/supply/market', { params })
 }
 
-// 我的供应
 export function getMySupplyPage(params) {
   return request.get('/supply/my', { params })
 }
 
 export function getSupplyById(id) {
   return request.get(`/supply/${id}`)
+}
+
+export function getSupplyPricing(id, quantity) {
+  return request.get(`/supply/${id}/pricing`, { params: { quantity } })
 }
 
 export function createSupply(data) {
@@ -30,12 +32,10 @@ export function deleteSupply(id) {
   return request.delete(`/supply/${id}`)
 }
 
-// 需求信息 - 需求大厅
 export function getDemandPage(params) {
   return request.get('/demand/market', { params })
 }
 
-// 我的需求
 export function getMyDemandPage(params) {
   return request.get('/demand/my', { params })
 }
@@ -60,7 +60,6 @@ export function deleteDemand(id) {
   return request.delete(`/demand/${id}`)
 }
 
-// 订单管理
 export function getOrderPage(params) {
   return request.get('/order/page', { params })
 }
@@ -78,7 +77,9 @@ export function confirmOrder(id) {
 }
 
 export function deliverOrder(id, logisticsCompany, logisticsNo) {
-  return request.put(`/order/${id}/deliver`, null, { params: { logisticsCompany, logisticsNo } })
+  return request.put(`/order/${id}/deliver`, null, {
+    params: { logisticsCompany, logisticsNo }
+  })
 }
 
 export function completeOrder(id) {
@@ -86,5 +87,7 @@ export function completeOrder(id) {
 }
 
 export function cancelOrder(id, cancelReason) {
-  return request.put(`/order/${id}/cancel`, null, { params: { cancelReason } })
+  return request.put(`/order/${id}/cancel`, null, {
+    params: { cancelReason }
+  })
 }

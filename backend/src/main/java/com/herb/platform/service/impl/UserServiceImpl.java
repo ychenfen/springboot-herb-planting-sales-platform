@@ -24,7 +24,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * 用户管理服务实现类
+ * User service implementation.
  */
 @Service
 @RequiredArgsConstructor
@@ -39,7 +39,6 @@ public class UserServiceImpl implements UserService {
     public IPage<UserVO> page(String username, String phone, Integer userType, Integer status, int pageNum, int pageSize) {
         Page<User> page = new Page<>(pageNum, pageSize);
         LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<>();
-
         if (StringUtils.hasText(username)) {
             wrapper.like(User::getUsername, username);
         }
@@ -54,9 +53,7 @@ public class UserServiceImpl implements UserService {
         }
         wrapper.eq(User::getDeleted, 0);
         wrapper.orderByDesc(User::getCreateTime);
-
-        IPage<User> userPage = userMapper.selectPage(page, wrapper);
-        return userPage.convert(this::convertToVO);
+        return userMapper.selectPage(page, wrapper).convert(this::convertToVO);
     }
 
     @Override
@@ -71,7 +68,6 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public Long create(UserDTO dto) {
-        // 检查用户名是否存在
         LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(User::getUsername, dto.getUsername());
         wrapper.eq(User::getDeleted, 0);
@@ -79,7 +75,6 @@ public class UserServiceImpl implements UserService {
             throw new BusinessException("用户名已存在");
         }
 
-        // 检查手机号是否存在
         if (StringUtils.hasText(dto.getPhone())) {
             LambdaQueryWrapper<User> phoneWrapper = new LambdaQueryWrapper<>();
             phoneWrapper.eq(User::getPhone, dto.getPhone());
@@ -91,17 +86,14 @@ public class UserServiceImpl implements UserService {
 
         User user = new User();
         BeanUtils.copyProperties(dto, user);
-        // 默认密码
         String password = StringUtils.hasText(dto.getPassword()) ? dto.getPassword() : "123456";
         user.setPassword(passwordUtil.encrypt(password));
         user.setStatus(dto.getStatus() != null ? dto.getStatus() : 1);
         userMapper.insert(user);
 
-        // 分配角色
         if (dto.getRoleIds() != null && !dto.getRoleIds().isEmpty()) {
             assignRoles(user.getId(), dto.getRoleIds());
         }
-
         return user.getId();
     }
 
@@ -117,7 +109,6 @@ public class UserServiceImpl implements UserService {
             throw new BusinessException(ResponseCode.DATA_NOT_FOUND);
         }
 
-        // 检查用户名是否重复
         if (StringUtils.hasText(dto.getUsername()) && !dto.getUsername().equals(user.getUsername())) {
             LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<>();
             wrapper.eq(User::getUsername, dto.getUsername());
@@ -128,7 +119,6 @@ public class UserServiceImpl implements UserService {
             }
         }
 
-        // 检查手机号是否重复
         if (StringUtils.hasText(dto.getPhone()) && !dto.getPhone().equals(user.getPhone())) {
             LambdaQueryWrapper<User> phoneWrapper = new LambdaQueryWrapper<>();
             phoneWrapper.eq(User::getPhone, dto.getPhone());
@@ -142,7 +132,6 @@ public class UserServiceImpl implements UserService {
         BeanUtils.copyProperties(dto, user, "id", "password", "createTime", "deleted");
         userMapper.updateById(user);
 
-        // 更新角色
         if (dto.getRoleIds() != null) {
             assignRoles(user.getId(), dto.getRoleIds());
         }
@@ -155,11 +144,9 @@ public class UserServiceImpl implements UserService {
         if (user == null) {
             throw new BusinessException(ResponseCode.DATA_NOT_FOUND);
         }
-        // 逻辑删除
         user.setDeleted(1);
         userMapper.updateById(user);
 
-        // 删除用户角色关联
         LambdaQueryWrapper<UserRole> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(UserRole::getUserId, id);
         userRoleMapper.delete(wrapper);
@@ -189,12 +176,10 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void assignRoles(Long userId, List<Long> roleIds) {
-        // 删除原有角色
         LambdaQueryWrapper<UserRole> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(UserRole::getUserId, userId);
         userRoleMapper.delete(wrapper);
 
-        // 添加新角色
         if (roleIds != null && !roleIds.isEmpty()) {
             for (Long roleId : roleIds) {
                 UserRole userRole = new UserRole();
@@ -211,23 +196,29 @@ public class UserServiceImpl implements UserService {
         vo.setUserTypeName(getUserTypeName(user.getUserType()));
         vo.setStatusName(user.getStatus() == 1 ? "正常" : "禁用");
 
-        // 获取用户角色
         List<Role> roles = roleMapper.selectByUserId(user.getId());
         if (roles != null && !roles.isEmpty()) {
             vo.setRoleIds(roles.stream().map(Role::getId).collect(Collectors.toList()));
             vo.setRoleNames(roles.stream().map(Role::getRoleName).collect(Collectors.joining(",")));
         }
-
         return vo;
     }
 
     private String getUserTypeName(Integer userType) {
-        if (userType == null) return "";
+        if (userType == null) {
+            return "";
+        }
         switch (userType) {
-            case 1: return "种植户";
-            case 2: return "采购商";
-            case 3: return "管理员";
-            default: return "";
+            case 1:
+                return "种植户";
+            case 2:
+                return "商家";
+            case 3:
+                return "管理员";
+            case 4:
+                return "普通用户";
+            default:
+                return "";
         }
     }
 }

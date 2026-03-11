@@ -1,106 +1,98 @@
 <template>
-  <div class="login-container">
-    <!-- 背景装饰 -->
-    <div class="bg-decoration">
-      <div class="circle circle-1"></div>
-      <div class="circle circle-2"></div>
-      <div class="circle circle-3"></div>
-    </div>
+  <div class="login-page">
+    <div class="ambient"></div>
 
-    <!-- 登录卡片 -->
-    <div class="login-card">
-      <div class="login-left">
-        <div class="brand">
-          <div class="logo-icon">
-            <el-icon :size="48"><Grape /></el-icon>
-          </div>
-          <h1>中药材种植与销售服务平台</h1>
-          <p>Traditional Chinese Medicine Planting & Sales Platform</p>
+    <div class="login-shell">
+      <section class="brand-panel">
+        <div class="brand-badge">
+          <el-icon :size="34"><Grape /></el-icon>
         </div>
-        <div class="features">
+        <h1>中药材种植与销售服务平台</h1>
+        <p>聚焦种植知识、规范销售、质量溯源和多角色协同管理。</p>
+
+        <div class="feature-list">
           <div class="feature-item">
             <el-icon><CircleCheck /></el-icon>
-            <span>智能种植管理</span>
+            <span>中药材智能百科与病虫害识别演示</span>
           </div>
           <div class="feature-item">
             <el-icon><CircleCheck /></el-icon>
-            <span>产销精准对接</span>
+            <span>规格计价、购物车与订单追踪</span>
           </div>
           <div class="feature-item">
             <el-icon><CircleCheck /></el-icon>
-            <span>全程质量溯源</span>
+            <span>产地、采收、质检状态可视化溯源</span>
           </div>
           <div class="feature-item">
             <el-icon><CircleCheck /></el-icon>
-            <span>数据智能分析</span>
+            <span>普通用户 / 种植户 / 商家 / 管理员四角色</span>
           </div>
         </div>
-      </div>
+      </section>
 
-      <div class="login-right">
-        <div class="login-form-wrapper">
+      <section class="form-panel">
+        <div class="form-head">
           <h2>欢迎登录</h2>
-          <p class="subtitle">请输入您的账户信息</p>
+          <p>请输入账号和密码进入系统</p>
+        </div>
 
-          <el-form
-            ref="loginFormRef"
-            :model="loginForm"
-            :rules="loginRules"
-            class="login-form"
-            size="large"
-          >
-            <el-form-item prop="username">
-              <el-input
-                v-model="loginForm.username"
-                placeholder="请输入用户名"
-                :prefix-icon="User"
-              />
-            </el-form-item>
+        <el-form ref="loginFormRef" :model="loginForm" :rules="loginRules" size="large">
+          <el-form-item prop="username">
+            <el-input
+              v-model="loginForm.username"
+              :prefix-icon="User"
+              placeholder="请输入用户名"
+              @keyup.enter="handleLogin"
+            />
+          </el-form-item>
 
-            <el-form-item prop="password">
-              <el-input
-                v-model="loginForm.password"
-                type="password"
-                placeholder="请输入密码"
-                :prefix-icon="Lock"
-                show-password
-                @keyup.enter="handleLogin"
-              />
-            </el-form-item>
+          <el-form-item prop="password">
+            <el-input
+              v-model="loginForm.password"
+              type="password"
+              :prefix-icon="Lock"
+              placeholder="请输入密码"
+              show-password
+              @keyup.enter="handleLogin"
+            />
+          </el-form-item>
 
-            <el-form-item>
-              <div class="form-options">
-                <el-checkbox v-model="rememberMe">记住我</el-checkbox>
-                <a href="javascript:void(0)" class="forgot-link">忘记密码?</a>
-              </div>
-            </el-form-item>
+          <el-button type="primary" class="submit-btn" :loading="loading" @click="handleLogin">
+            {{ loading ? '登录中...' : '登录系统' }}
+          </el-button>
+        </el-form>
 
-            <el-form-item>
-              <el-button
-                type="primary"
-                :loading="loading"
-                class="login-button"
-                @click="handleLogin"
-              >
-                {{ loading ? '登录中...' : '登 录' }}
-              </el-button>
-            </el-form-item>
-          </el-form>
-
-          <div class="login-footer">
-            <span>测试账号：admin / admin123</span>
+        <div class="account-panel">
+          <span class="account-title">演示账号</span>
+          <div class="account-list">
+            <div class="account-item">
+              <strong>管理员</strong>
+              <span>admin / admin123</span>
+            </div>
+            <div class="account-item">
+              <strong>种植户</strong>
+              <span>farmer001 / admin123</span>
+            </div>
+            <div class="account-item">
+              <strong>商家</strong>
+              <span>buyer001 / admin123</span>
+            </div>
+            <div class="account-item">
+              <strong>普通用户</strong>
+              <span>user001 / admin123</span>
+            </div>
           </div>
         </div>
-      </div>
+      </section>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { User, Lock, Grape, CircleCheck } from '@element-plus/icons-vue'
+import { CircleCheck, Grape, Lock, User } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 
 const router = useRouter()
@@ -108,25 +100,21 @@ const userStore = useUserStore()
 
 const loginFormRef = ref()
 const loading = ref(false)
-const rememberMe = ref(false)
-
 const loginForm = reactive({
   username: '',
   password: ''
 })
 
 const loginRules = {
-  username: [
-    { required: true, message: '请输入用户名', trigger: 'blur' }
-  ],
+  username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
   password: [
     { required: true, message: '请输入密码', trigger: 'blur' },
-    { min: 6, message: '密码长度不少于6位', trigger: 'blur' }
+    { min: 6, message: '密码长度不能少于 6 位', trigger: 'blur' }
   ]
 }
 
 const handleLogin = async () => {
-  const valid = await loginFormRef.value.validate().catch(() => false)
+  const valid = await loginFormRef.value?.validate().catch(() => false)
   if (!valid) return
 
   loading.value = true
@@ -134,8 +122,6 @@ const handleLogin = async () => {
     await userStore.login(loginForm)
     ElMessage.success('登录成功')
     router.push('/dashboard')
-  } catch (error) {
-    console.error('登录失败:', error)
   } finally {
     loading.value = false
   }
@@ -143,218 +129,186 @@ const handleLogin = async () => {
 </script>
 
 <style scoped>
-.login-container {
+.login-page {
   min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(135deg, #1a472a 0%, #2e7d32 50%, #4caf50 100%);
   position: relative;
-  overflow: hidden;
-}
-
-.bg-decoration {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-}
-
-.circle {
-  position: absolute;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.1);
-  animation: float 6s ease-in-out infinite;
-}
-
-.circle-1 {
-  width: 300px;
-  height: 300px;
-  top: -100px;
-  right: -100px;
-  animation-delay: 0s;
-}
-
-.circle-2 {
-  width: 200px;
-  height: 200px;
-  bottom: -50px;
-  left: -50px;
-  animation-delay: 2s;
-}
-
-.circle-3 {
-  width: 150px;
-  height: 150px;
-  top: 50%;
-  left: 10%;
-  animation-delay: 4s;
-}
-
-@keyframes float {
-  0%, 100% {
-    transform: translateY(0) scale(1);
-  }
-  50% {
-    transform: translateY(-20px) scale(1.05);
-  }
-}
-
-.login-card {
   display: flex;
-  width: 900px;
-  min-height: 520px;
-  background: white;
-  border-radius: 20px;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
   overflow: hidden;
-  z-index: 1;
+  background:
+    radial-gradient(circle at 12% 18%, rgba(199, 211, 137, 0.3), transparent 24%),
+    radial-gradient(circle at 88% 82%, rgba(61, 120, 73, 0.24), transparent 22%),
+    linear-gradient(135deg, #123321 0%, #1f5d34 50%, #7b934a 100%);
 }
 
-.login-left {
-  flex: 1;
-  background: linear-gradient(135deg, #2e7d32 0%, #1b5e20 100%);
-  padding: 60px 40px;
+.ambient {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(120deg, rgba(255, 255, 255, 0.08) 0%, transparent 34%),
+    linear-gradient(300deg, rgba(255, 255, 255, 0.05) 0%, transparent 32%);
+}
+
+.login-shell {
+  position: relative;
+  z-index: 1;
+  width: min(1100px, 100%);
+  min-height: 620px;
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  border-radius: 28px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 28px 80px rgba(7, 22, 12, 0.28);
+}
+
+.brand-panel {
+  padding: 56px 48px;
+  color: #fff;
+  background:
+    radial-gradient(circle at top right, rgba(214, 214, 143, 0.16), transparent 25%),
+    linear-gradient(180deg, #143725 0%, #19492e 55%, #2f6841 100%);
   display: flex;
   flex-direction: column;
   justify-content: center;
-  color: white;
 }
 
-.brand {
-  text-align: center;
-  margin-bottom: 40px;
-}
-
-.logo-icon {
-  width: 80px;
-  height: 80px;
-  background: rgba(255, 255, 255, 0.2);
+.brand-badge {
+  width: 68px;
+  height: 68px;
   border-radius: 20px;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0 auto 20px;
+  background: linear-gradient(135deg, #93c267 0%, #cad26a 100%);
+  color: #133624;
+  margin-bottom: 24px;
 }
 
-.brand h1 {
-  font-size: 24px;
-  font-weight: 600;
-  margin-bottom: 8px;
+.brand-panel h1 {
+  margin: 0 0 12px;
+  font-size: 34px;
+  line-height: 1.25;
 }
 
-.brand p {
-  font-size: 12px;
-  opacity: 0.8;
+.brand-panel p {
+  margin: 0 0 28px;
+  line-height: 1.8;
+  color: rgba(255, 255, 255, 0.82);
 }
 
-.features {
+.feature-list {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 14px;
 }
 
 .feature-item {
   display: flex;
   align-items: center;
   gap: 12px;
-  font-size: 14px;
-  padding: 12px 20px;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 10px;
-  transition: all 0.3s;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.08);
 }
 
-.feature-item:hover {
-  background: rgba(255, 255, 255, 0.2);
-  transform: translateX(5px);
-}
-
-.login-right {
-  flex: 1;
+.form-panel {
+  padding: 56px 44px;
   display: flex;
-  align-items: center;
+  flex-direction: column;
   justify-content: center;
-  padding: 40px;
 }
 
-.login-form-wrapper {
-  width: 100%;
-  max-width: 320px;
+.form-head {
+  margin-bottom: 26px;
 }
 
-.login-form-wrapper h2 {
-  font-size: 28px;
-  color: #1a472a;
-  margin-bottom: 8px;
+.form-head h2 {
+  margin: 0 0 8px;
+  color: #1d3f2b;
+  font-size: 30px;
 }
 
-.subtitle {
-  color: #909399;
-  margin-bottom: 32px;
+.form-head p {
+  margin: 0;
+  color: #738174;
 }
 
-.login-form {
-  margin-bottom: 20px;
+.form-panel :deep(.el-input__wrapper) {
+  min-height: 46px;
+  border-radius: 12px;
 }
 
-.login-form :deep(.el-input__wrapper) {
-  border-radius: 10px;
-  padding: 4px 12px;
-}
-
-.form-options {
-  display: flex;
-  justify-content: space-between;
-  width: 100%;
-}
-
-.forgot-link {
-  color: #2e7d32;
-  text-decoration: none;
-  font-size: 14px;
-}
-
-.forgot-link:hover {
-  text-decoration: underline;
-}
-
-.login-button {
+.submit-btn {
   width: 100%;
   height: 48px;
+  margin-top: 6px;
+  border-radius: 14px;
   font-size: 16px;
-  border-radius: 10px;
-  background: linear-gradient(135deg, #2e7d32 0%, #1b5e20 100%);
-  border: none;
-  transition: all 0.3s;
+  letter-spacing: 1px;
 }
 
-.login-button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(46, 125, 50, 0.4);
+.account-panel {
+  margin-top: 28px;
+  padding-top: 22px;
+  border-top: 1px solid #edf0ea;
 }
 
-.login-footer {
-  text-align: center;
-  color: #909399;
-  font-size: 12px;
-  padding-top: 20px;
-  border-top: 1px solid #eee;
+.account-title {
+  display: inline-block;
+  margin-bottom: 14px;
+  color: #506652;
+  font-size: 13px;
 }
 
-@media (max-width: 768px) {
-  .login-card {
-    flex-direction: column;
-    width: 90%;
-    max-width: 400px;
+.account-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.account-item {
+  padding: 14px;
+  border-radius: 14px;
+  background: #f5f9f3;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.account-item strong {
+  color: #284a33;
+}
+
+.account-item span {
+  color: #718071;
+  font-size: 13px;
+}
+
+@media (max-width: 960px) {
+  .login-shell {
+    grid-template-columns: 1fr;
   }
 
-  .login-left {
-    padding: 30px 20px;
+  .brand-panel {
+    padding: 40px 32px;
+  }
+}
+
+@media (max-width: 640px) {
+  .login-page {
+    padding: 14px;
   }
 
-  .features {
-    display: none;
+  .form-panel,
+  .brand-panel {
+    padding: 28px 22px;
+  }
+
+  .account-list {
+    grid-template-columns: 1fr;
   }
 }
 </style>

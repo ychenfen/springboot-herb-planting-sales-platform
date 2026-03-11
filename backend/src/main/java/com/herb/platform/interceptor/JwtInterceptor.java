@@ -4,8 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.herb.platform.common.Constants;
 import com.herb.platform.common.ResponseCode;
 import com.herb.platform.common.Result;
+import com.herb.platform.service.TokenStoreService;
 import com.herb.platform.utils.JwtUtil;
-import com.herb.platform.utils.RedisUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -25,7 +25,7 @@ public class JwtInterceptor implements HandlerInterceptor {
 
     private final JwtUtil jwtUtil;
     private final ObjectMapper objectMapper;
-    private final RedisUtil redisUtil;
+    private final TokenStoreService tokenStoreService;
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
@@ -57,8 +57,8 @@ public class JwtInterceptor implements HandlerInterceptor {
         }
 
         String tokenKey = Constants.REDIS_TOKEN_PREFIX + userId;
-        Object cachedToken = redisUtil.get(tokenKey);
-        if (cachedToken == null || !token.equals(String.valueOf(cachedToken))) {
+        String cachedToken = tokenStoreService.get(tokenKey);
+        if (cachedToken == null || !token.equals(cachedToken)) {
             sendError(response, ResponseCode.TOKEN_INVALID);
             return false;
         }

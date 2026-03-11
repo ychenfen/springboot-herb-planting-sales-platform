@@ -1,335 +1,168 @@
 # 中药材种植与销售服务平台
 
-## 项目简介
+基于 `Spring Boot 2.7 + Vue 3 + MyBatis-Plus + Element Plus` 的中药材种植、销售、溯源平台。当前版本重点补齐了种植知识、销售闭环、四角色权限，以及 Windows 近零前置环境的一键启动能力。
 
-基于Spring Boot和Vue3的中药材种植与销售服务平台，实现从种植管理到销售溯源的完整业务闭环。
+## 功能概览
 
-### 核心功能
-- **种植管理**：地块管理、作物管理、农事记录、生长跟踪
-- **销售对接**：供应发布、需求发布、信息检索、在线沟通
-- **质量溯源**：二维码生成、溯源查询、全流程追溯
-- **数据分析**：产量统计、销售分析、趋势图表
+### 种植知识
+- 中药材智能百科：按药材种类、种植季节、病害类型分类检索，支持 `黄芪 病害` 这类关键词直达。
+- 病虫害识别演示：上传图片后，通过本地样例图库和图像相似度匹配返回相似病症与防治建议。
+- 种植日历：按药材输出播种、施肥、除草、采收的时间线与提醒。
 
-## 技术栈
+### 销售与溯源
+- 供应大厅、采购需求、购物车、订单管理。
+- 商品规格智能计价：支持按克、按斤、按批发门槛联动计算。
+- 溯源信息展示：商品页可查看产地、种植时间、采收时间、质检状态、批次号、溯源码。
+- 订单状态流转：待确认、待发货、待收货、已完成、已取消。
 
-### 后端技术
-- Spring Boot 2.7.x
-- MyBatis-Plus 3.5.x
-- MySQL 8.0
-- Redis 6.x
-- JWT Token 认证
-- Lombok
-- Swagger/Knife4j API文档
+### 系统能力
+- 四角色权限：普通用户、种植户、商家、管理员。
+- 菜单、页面、统计范围按角色隔离。
+- 本地演示版登录态使用内存 token 存储，Windows 首次运行不再依赖 Redis。
 
-### 前端技术
-- Vue 3.3.x
-- Element Plus
-- Axios
-- Vue Router
-- Pinia 状态管理
-- ECharts 数据可视化
+## 目录结构
 
-## 项目结构
-
-```
-herb-platform/
-├── backend/                    # 后端项目
-│   ├── src/
-│   │   ├── main/
-│   │   │   ├── java/
-│   │   │   │   └── com/herb/platform/
-│   │   │   │       ├── config/         # 配置类
-│   │   │   │       ├── controller/     # 控制器
-│   │   │   │       ├── service/        # 服务层
-│   │   │   │       ├── mapper/         # 数据访问层
-│   │   │   │       ├── entity/         # 实体类
-│   │   │   │       ├── dto/            # 数据传输对象
-│   │   │   │       ├── vo/             # 视图对象
-│   │   │   │       ├── common/         # 公共类
-│   │   │   │       ├── exception/      # 异常处理
-│   │   │   │       └── utils/          # 工具类
-│   │   │   └── resources/
-│   │   │       ├── mapper/             # MyBatis映射文件
-│   │   │       ├── application.yml     # 配置文件
-│   │   │       └── application-dev.yml # 开发环境配置
-│   │   └── test/                       # 测试代码
-│   └── pom.xml                         # Maven配置
-├── frontend/                   # 前端项目
-│   ├── src/
-│   │   ├── api/                # API接口
-│   │   ├── assets/             # 静态资源
-│   │   ├── components/         # 公共组件
-│   │   ├── views/              # 页面组件
-│   │   ├── router/             # 路由配置
-│   │   ├── store/              # 状态管理
-│   │   ├── utils/              # 工具函数
-│   │   ├── App.vue             # 根组件
-│   │   └── main.js             # 入口文件
-│   ├── package.json
-│   └── vite.config.js
-├── database/                   # 数据库脚本
-│   ├── schema.sql              # 表结构
-│   ├── data.sql                # 初始化数据
-│   └── update/                 # 更新脚本
-└── docs/                       # 文档
-    ├── 快速开始指南.md
-    ├── 代码生成指南.md
-    ├── API接口文档.md
-    ├── 数据库设计.md
-    ├── 部署文档.md
-    └── 开发指南.md
+```text
+springboot-herb-planting-sales-platform/
+├─ backend/                  Spring Boot 后端
+├─ frontend/                 Vue 3 前端
+├─ database/                 全量建库与种子数据
+├─ docs/                     项目文档
+├─ scripts/bootstrap-windows.ps1
+├─ init-windows.bat          仅初始化运行环境与数据库
+├─ start.bat                 一键初始化并启动前后端
+└─ .runtime/                 首次运行后生成的本地运行时目录
 ```
 
-## 核心模块设计
+## Windows 一键启动
 
-### 1. 用户认证与权限管理 (RBAC)
-- 用户注册/登录
-- JWT Token认证
-- 基于角色的访问控制
-- 用户角色：种植户、采购商、管理员
+### 适用场景
 
-### 2. 种植管理模块
-- 地块信息管理
-- 作物品种管理
-- 农事活动记录
-- 生长周期跟踪
-- 产量预测分析
+推荐直接用于 Windows 10/11 本地演示、答辩和功能验收。默认假设机器上没有 JDK、Node、MySQL、Maven，也不要求额外安装 Redis。
 
-### 3. 销售对接模块
-- 供应信息发布
-- 采购需求发布
-- 多条件搜索筛选
-- 在线沟通交流
-- 订单管理
+### 你只需要准备
 
-### 4. 质量溯源模块
-- 溯源码生成(二维码)
-- 生产流程记录
-- 溯源信息查询
-- 节点信息展示
+- 能联网
+- PowerShell 5.1+
+- 至少约 3GB 可用磁盘空间
 
-### 5. 数据可视化模块
-- 产量统计分析
-- 销售数据报表
-- 价格趋势图表
-- 用户行为分析
+### 一键启动步骤
 
-## 数据库设计
+直接双击或在 PowerShell / CMD 中运行：
 
-### 核心表结构
-- `sys_user` - 用户表
-- `sys_role` - 角色表
-- `sys_permission` - 权限表
-- `sys_user_role` - 用户角色关联表
-- `herb_field` - 地块表
-- `herb_crop` - 作物表
-- `herb_farm_record` - 农事记录表
-- `herb_supply` - 供应信息表
-- `herb_demand` - 需求信息表
-- `herb_order` - 订单表
-- `herb_trace` - 溯源信息表
-- `herb_trace_node` - 溯源节点表
-
-详细设计见 [数据库设计文档](docs/数据库设计.md)
-
-## 项目当前状态
-
-✅ **已完成**：
-- 完整的数据库设计（20张表）
-- 后端所有模块开发（13个Controller）
-- 前端所有页面开发（15个Vue页面）
-- 前后端联调测试
-- 数据库初始化脚本
-
-📋 **功能模块**：
-- ✅ 用户认证与权限管理
-- ✅ 种植管理（地块、作物、农事记录）
-- ✅ 销售对接（供应、需求、订单）
-- ✅ 质量溯源（溯源管理、溯源查询）
-- ✅ 数据分析（仪表盘、销售分析、产量分析）
-- ✅ 系统管理（用户、角色、字典）
-
-## 快速开始
-
-### 📖 重要文档
-
-开始之前，强烈建议阅读以下文档：
-
-**Windows 快速启动：**
-本项目已完全兼容 Windows 环境，提供了两个便捷脚本：
-1. 双击运行 `init-windows.bat`：初始化前端配置并查看数据库导入指南
-2. 双击运行 `start.bat`：一键自动编译后端、启动后端服务，并安装前端依赖启动前端服务
-
-1. **[下一步操作指南.md](下一步操作指南.md)** - 详细的开发步骤（必读）
-2. **[项目总览.md](项目总览.md)** - 项目整体状态和进度
-3. **[快速开始指南.md](docs/快速开始指南.md)** - 环境搭建详细教程
-4. **[代码生成指南.md](docs/代码生成指南.md)** - 使用Claude Code快速开发
-5. **[API接口文档.md](docs/API接口文档.md)** - 接口概览与示例
-6. **[数据库设计.md](docs/数据库设计.md)** - 表结构与设计说明
-7. **[部署文档.md](docs/部署文档.md)** - 部署与发布流程
-8. **[开发指南.md](docs/开发指南.md)** - 开发约定与规范
-9. **[项目检查清单.md](项目检查清单.md)** - 开发进度跟踪
-10. **[项目实施计划.md](项目实施计划.md)** - 完整开发计划（40000+字）
-
-### 环境要求
-- JDK 11+
-- MySQL 8.0+
-- Redis 6.0+
-- Node.js 16+
-- Maven 3.6+
-
-> **注意：** 在 Windows 上部署时，请务必确保 Redis 服务已启动（默认端口 6379），否则后端应用将无法启动。
-
-### 数据库初始化（第一步）
-
-```bash
-# 登录MySQL
-mysql -u root -p
-
-# 执行初始化脚本
-source database/schema.sql
-source database/data.sql
-
-# 验证初始化
-USE herb_platform;
-SHOW TABLES;  -- 应显示20张表
-SELECT * FROM sys_user;  -- 应显示3个测试账号
+```bat
+start.bat
 ```
 
-**默认账号**：
-| 用户名 | 密码 | 角色 |
-|-------|------|------|
-| admin | admin123 | 系统管理员 |
-| farmer001 | admin123 | 种植户 |
-| buyer001 | admin123 | 采购商 |
+如果只想先准备环境，不立刻启动前后端：
 
-### 配置后端（第二步）
-
-编辑 `backend/src/main/resources/application-dev.yml`：
-
-```yaml
-spring:
-  datasource:
-    username: root          # 修改为你的MySQL用户名
-    password: your_password # 修改为你的MySQL密码
-
-  redis:
-    password:  # 如果Redis有密码，填写在这里
+```bat
+init-windows.bat
 ```
 
-### 使用Claude Code生成代码（可选）
+### 首次运行会自动完成
 
-当前代码已提供，如需扩展模块或重新生成，可参考 **[代码生成指南.md](docs/代码生成指南.md)**：
+- 下载便携式 JDK 11 到 `.runtime/tools/jdk`
+- 下载便携式 Node.js LTS 到 `.runtime/tools/node`
+- 下载便携式 MySQL 8.4 到 `.runtime/tools/mysql`
+- 缺少 VC++ Runtime 时尝试静默安装
+- 初始化本地数据库 `herb_platform`
+- 导入 `database/schema.sql` 和 `database/data.sql`
+- 安装前端依赖
+- 使用 `backend/mvnw.cmd` 打包后端
+- 打开两个 PowerShell 窗口分别启动前后端
 
-**第一个提示词示例**：
-```
-请生成Spring Boot主启动类
+### 本地默认运行参数
 
-类名: HerbPlatformApplication
-包路径: com.herb.platform
-注解: @SpringBootApplication, @MapperScan("com.herb.platform.mapper")
+- 前端：http://localhost:5173
+- 后端：http://localhost:8080/api
+- 接口文档：http://localhost:8080/api/doc.html
+- 本地 MySQL：`127.0.0.1:13306`
+- 数据库名：`herb_platform`
+- 数据库账号：`herb_local`
+- 数据库密码：`herb123`
 
-保存到: backend/src/main/java/com/herb/platform/HerbPlatformApplication.java
-```
+说明：
+- `.runtime/` 已加入 `.gitignore`，不会污染仓库。
+- 本地演示启动不要求 Redis；如果你后续要接回 Redis 做缓存或分布式 token，再按配置文件补充即可。
+- 第一次运行下载和解压时间较长，通常需要数分钟。
 
-### 后端启动
+## 手动启动
 
-```bash
-# 进入后端目录
+### 后端
+
+```bat
 cd backend
-
-# 安装依赖
-mvn clean install
-
-# 启动应用
-mvn spring-boot:run
+mvnw.cmd clean package -DskipTests
+java -jar target\herb-platform-1.0.0.jar
 ```
 
-访问：
-- API文档：http://localhost:8080/api/doc.html
-- Druid监控：http://localhost:8080/api/druid
+如需复用一键脚本创建的本地数据库，先设置环境变量：
 
-### 前端启动
+```bat
+set DB_HOST=127.0.0.1
+set DB_PORT=13306
+set DB_NAME=herb_platform
+set DB_USERNAME=herb_local
+set DB_PASSWORD=herb123
+```
 
-```bash
-# 进入前端目录
+### 前端
+
+```bat
 cd frontend
-
-# 安装依赖
 npm install
-
-# 启动开发服务器
 npm run dev
 ```
 
-访问 http://localhost:5173
+## 数据库初始化
 
-## 配置说明
+### 全新初始化
 
-### 后端配置 (application.yml)
+`database/schema.sql` 已包含完整表结构，`database/data.sql` 已包含种子数据。导入顺序固定为：
 
-```yaml
-spring:
-  datasource:
-    url: jdbc:mysql://localhost:3306/herb_platform
-    username: root
-    password: your_password
-  redis:
-    host: localhost
-    port: 6379
-    password:
+```sql
+SOURCE database/schema.sql;
+SOURCE database/data.sql;
 ```
 
-### 前端配置
+初始化内容包括：
+- 四角色账号、角色、菜单权限映射
+- 供应、需求、订单、收藏、溯源等业务基础数据
+- 知识模块三张表：`herb_knowledge`、`herb_disease_case`、`herb_calendar_stage`
+- 商品批发价和起批量字段
 
-前端默认通过 Vite 代理 `/api` 到 `http://localhost:8080`，配置位于 `frontend/vite.config.js`。
-如需调整后端地址，可修改 `server.proxy` 或 `frontend/src/utils/request.js`。
+### 从旧库升级
 
-## 项目亮点
+如果你已有旧版数据库，不想重建：
 
-1. **业务闭环创新**：从种植到销售的完整链路
-2. **技术栈先进**：Spring Boot + Vue3 + Redis 现代化架构
-3. **权限设计完善**：RBAC模型保证安全性
-4. **性能优化**：Redis缓存、索引优化、分页查询
-5. **可扩展性强**：模块化设计，易于扩展新功能
-6. **用户体验好**：响应式设计，操作便捷
+```sql
+SOURCE database/update_20260311_feature_upgrade.sql;
+```
 
-## 开发进度
+## 默认账号
 
-- [x] 项目架构设计
-- [x] 数据库设计
-- [x] 后端核心功能开发
-  - [x] 用户认证模块
-  - [x] 种植管理模块
-  - [x] 销售对接模块
-  - [x] 质量溯源模块
-  - [x] 数据分析模块
-  - [x] 系统管理模块
-- [x] 前端页面开发
-  - [x] 登录注册页面
-  - [x] 种植管理界面
-  - [x] 销售对接界面
-  - [x] 溯源查询界面
-  - [x] 数据分析界面
-  - [x] 系统管理界面
-- [x] 前后端联调测试
-- [ ] 生产环境部署
+| 角色 | 账号 | 密码 |
+|---|---|---|
+| 管理员 | `admin` | `admin123` |
+| 种植户 | `farmer001` | `admin123` |
+| 商家 | `buyer001` | `admin123` |
+| 普通用户 | `user001` | `admin123` |
 
-## API文档
+## 已完成验证
 
-启动后端后访问：http://localhost:8080/api/doc.html
+以下验证已在 `2026-03-11` 完成：
+- `powershell -File scripts/bootstrap-windows.ps1 -Mode Init` 成功下载并初始化便携式 JDK、Node、MySQL
+- 本地 MySQL `127.0.0.1:13306` 建库成功，`sys_user = 4`、`herb_knowledge = 3`、`herb_calendar_stage = 15`
+- 后端 `backend\\mvnw.cmd -DskipTests compile` 通过
+- 后端 `backend\\mvnw.cmd clean package -DskipTests` 通过
+- 前端 `npm run build` 通过
 
-## 参考文献
+## 建议验收顺序
 
-1. Spring Boot官方文档
-2. Vue3官方文档
-3. MyBatis-Plus官方文档
-4. Element Plus组件库文档
-
-## 联系方式
-
-如有问题，请提交Issue或联系开发团队。
-
-## 许可证
-
-MIT License
+1. 运行 `start.bat`
+2. 打开 `http://localhost:5173`
+3. 用四个默认账号分别登录，验证角色菜单隔离
+4. 测试知识百科搜索、病害识别演示、种植日历
+5. 测试供应下单、智能计价、订单状态流转、溯源信息展示
+6. 打开 `http://localhost:8080/api/doc.html` 检查后端接口文档

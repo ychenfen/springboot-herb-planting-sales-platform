@@ -29,7 +29,7 @@ CREATE TABLE sys_user (
     phone VARCHAR(20) UNIQUE COMMENT '手机号',
     email VARCHAR(100) COMMENT '邮箱',
     avatar VARCHAR(255) DEFAULT '/default-avatar.png' COMMENT '头像URL',
-    user_type TINYINT DEFAULT 1 COMMENT '用户类型: 1-种植户 2-采购商 3-管理员',
+    user_type TINYINT DEFAULT 1 COMMENT '用户类型: 1-种植户 2-商家 3-管理员 4-普通用户',
     status TINYINT DEFAULT 1 COMMENT '状态: 0-禁用 1-正常',
     last_login_time DATETIME COMMENT '最后登录时间',
     last_login_ip VARCHAR(50) COMMENT '最后登录IP',
@@ -213,6 +213,8 @@ CREATE TABLE herb_supply (
     supply_quantity DECIMAL(10,2) NOT NULL COMMENT '供应数量(kg)',
     remaining_quantity DECIMAL(10,2) COMMENT '剩余数量(kg)',
     price DECIMAL(10,2) COMMENT '价格(元/kg)',
+    wholesale_price DECIMAL(10,2) COMMENT '批发价(元/kg)',
+    wholesale_min_quantity DECIMAL(10,2) COMMENT '起批量(kg)',
     price_negotiable TINYINT DEFAULT 1 COMMENT '价格可议: 0-不可议 1-可议',
     production_area VARCHAR(200) COMMENT '产地',
     harvest_date DATE COMMENT '采收日期',
@@ -492,6 +494,69 @@ CREATE TABLE stat_daily (
     UNIQUE KEY uk_stat_date (stat_date),
     INDEX idx_stat_date (stat_date)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='每日统计表';
+
+-- 6.2 中药材知识百科
+DROP TABLE IF EXISTS herb_knowledge;
+CREATE TABLE herb_knowledge (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    herb_name VARCHAR(100) NOT NULL,
+    herb_alias VARCHAR(200),
+    herb_category VARCHAR(100),
+    planting_season VARCHAR(50),
+    disease_type VARCHAR(100),
+    keyword_tags VARCHAR(500),
+    summary VARCHAR(500),
+    planting_points TEXT,
+    disease_prevention TEXT,
+    rural_value TEXT,
+    content TEXT,
+    suitable_region VARCHAR(200),
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    deleted TINYINT DEFAULT 0,
+    INDEX idx_knowledge_name (herb_name),
+    INDEX idx_knowledge_category (herb_category)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='中药材知识百科';
+
+-- 6.3 病虫害样例库
+DROP TABLE IF EXISTS herb_disease_case;
+CREATE TABLE herb_disease_case (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    herb_name VARCHAR(100) NOT NULL,
+    disease_name VARCHAR(100) NOT NULL,
+    disease_type VARCHAR(100),
+    symptom_keywords VARCHAR(500),
+    symptom_description TEXT,
+    prevention_plan TEXT,
+    image_url VARCHAR(255),
+    season VARCHAR(50),
+    severity_level VARCHAR(50),
+    feature_tag VARCHAR(100),
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    deleted TINYINT DEFAULT 0,
+    INDEX idx_disease_name (disease_name),
+    INDEX idx_disease_herb (herb_name)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='病虫害样例库';
+
+-- 6.4 种植日历模板
+DROP TABLE IF EXISTS herb_calendar_stage;
+CREATE TABLE herb_calendar_stage (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    herb_name VARCHAR(100) NOT NULL,
+    stage_name VARCHAR(100) NOT NULL,
+    action_type VARCHAR(100),
+    day_offset INT DEFAULT 0,
+    duration_days INT DEFAULT 1,
+    reminder_days INT DEFAULT 3,
+    operation_window VARCHAR(100),
+    stage_tips VARCHAR(500),
+    sort_order INT DEFAULT 1,
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    deleted TINYINT DEFAULT 0,
+    INDEX idx_calendar_herb (herb_name)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='种植日历模板';
 
 -- ============================================
 -- 七、视图创建

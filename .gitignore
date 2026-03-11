@@ -28,3 +28,6 @@ frontend/dist/
 # Temp
 tmp/
 temp/
+
+# Local runtime bootstrap
+.runtime/

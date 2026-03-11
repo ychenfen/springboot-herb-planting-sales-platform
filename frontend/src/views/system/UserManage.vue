@@ -1,46 +1,42 @@
 <template>
-  <div class="page-container">
-    <div class="search-bar card-shadow">
-      <el-form :inline="true" :model="searchForm">
+  <div class="user-page">
+    <section class="toolbar card-shadow">
+      <el-form :inline="true" :model="queryForm">
         <el-form-item label="用户名">
-          <el-input v-model="searchForm.username" placeholder="请输入用户名" clearable />
+          <el-input v-model="queryForm.username" clearable placeholder="请输入用户名" />
         </el-form-item>
         <el-form-item label="用户类型">
-          <el-select v-model="searchForm.userType" placeholder="请选择" clearable style="width: 120px">
-            <el-option label="种植户" :value="1" />
-            <el-option label="采购商" :value="2" />
-            <el-option label="管理员" :value="3" />
+          <el-select v-model="queryForm.userType" clearable placeholder="全部类型" style="width: 150px">
+            <el-option v-for="item in userTypeOptions" :key="item.value" :label="item.label" :value="item.value" />
           </el-select>
         </el-form-item>
         <el-form-item label="状态">
-          <el-select v-model="searchForm.status" placeholder="请选择" clearable style="width: 100px">
+          <el-select v-model="queryForm.status" clearable placeholder="全部状态" style="width: 120px">
             <el-option label="正常" :value="1" />
             <el-option label="禁用" :value="0" />
           </el-select>
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" :icon="Search" @click="handleSearch">搜索</el-button>
-          <el-button :icon="Refresh" @click="handleReset">重置</el-button>
+          <el-button type="primary" @click="handleSearch">检索</el-button>
+          <el-button @click="handleReset">重置</el-button>
         </el-form-item>
       </el-form>
-      <el-button type="primary" :icon="Plus" @click="handleAdd" v-permission="'system:user:add'">新增用户</el-button>
-    </div>
+      <el-button type="primary" @click="handleAdd" v-permission="'system:user:add'">新增用户</el-button>
+    </section>
 
-    <div class="table-container card-shadow">
+    <section class="table-card card-shadow">
       <el-table :data="tableData" v-loading="loading" stripe>
         <el-table-column prop="username" label="用户名" width="120" />
         <el-table-column prop="realName" label="真实姓名" width="120" />
-        <el-table-column prop="phone" label="手机号" width="130" />
+        <el-table-column prop="phone" label="手机号" width="140" />
         <el-table-column prop="email" label="邮箱" min-width="180" show-overflow-tooltip />
-        <el-table-column prop="userTypeName" label="用户类型" width="100" align="center">
+        <el-table-column label="用户类型" width="120" align="center">
           <template #default="{ row }">
-            <el-tag :type="row.userType === 3 ? 'danger' : row.userType === 1 ? 'success' : 'primary'">
-              {{ row.userTypeName }}
-            </el-tag>
+            <el-tag :type="getUserTypeTag(row.userType)">{{ row.userTypeName }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="roleNames" label="角色" width="150" show-overflow-tooltip />
-        <el-table-column prop="status" label="状态" width="80" align="center">
+        <el-table-column prop="roleNames" label="角色" min-width="180" show-overflow-tooltip />
+        <el-table-column label="状态" width="90" align="center">
           <template #default="{ row }">
             <el-switch
               v-model="row.status"
@@ -52,7 +48,7 @@
           </template>
         </el-table-column>
         <el-table-column prop="createTime" label="创建时间" width="170" />
-        <el-table-column label="操作" width="200" fixed="right">
+        <el-table-column label="操作" width="210" fixed="right">
           <template #default="{ row }">
             <el-button type="primary" link @click="handleEdit(row)" v-permission="'system:user:edit'">编辑</el-button>
             <el-button type="warning" link @click="handleResetPwd(row)" v-permission="'system:user:edit'">重置密码</el-button>
@@ -70,14 +66,14 @@
         @size-change="loadData"
         @current-change="loadData"
       />
-    </div>
+    </section>
 
-    <el-dialog v-model="dialogVisible" :title="form.id ? '编辑用户' : '新增用户'" width="600px" destroy-on-close>
+    <el-dialog v-model="dialogVisible" :title="form.id ? '编辑用户' : '新增用户'" width="660px" destroy-on-close>
       <el-form ref="formRef" :model="form" :rules="rules" label-width="100px">
-        <el-row :gutter="20">
+        <el-row :gutter="18">
           <el-col :span="12">
             <el-form-item label="用户名" prop="username">
-              <el-input v-model="form.username" placeholder="请输入用户名" :disabled="!!form.id" />
+              <el-input v-model="form.username" :disabled="!!form.id" placeholder="请输入用户名" />
             </el-form-item>
           </el-col>
           <el-col :span="12">
@@ -86,14 +82,16 @@
             </el-form-item>
           </el-col>
         </el-row>
-        <el-row :gutter="20" v-if="!form.id">
+
+        <el-row :gutter="18" v-if="!form.id">
           <el-col :span="12">
             <el-form-item label="密码" prop="password">
-              <el-input v-model="form.password" type="password" placeholder="请输入密码" show-password />
+              <el-input v-model="form.password" type="password" show-password placeholder="请输入密码" />
             </el-form-item>
           </el-col>
         </el-row>
-        <el-row :gutter="20">
+
+        <el-row :gutter="18">
           <el-col :span="12">
             <el-form-item label="手机号" prop="phone">
               <el-input v-model="form.phone" placeholder="请输入手机号" />
@@ -105,13 +103,12 @@
             </el-form-item>
           </el-col>
         </el-row>
-        <el-row :gutter="20">
+
+        <el-row :gutter="18">
           <el-col :span="12">
             <el-form-item label="用户类型" prop="userType">
-              <el-select v-model="form.userType" placeholder="请选择" style="width: 100%">
-                <el-option label="种植户" :value="1" />
-                <el-option label="采购商" :value="2" />
-                <el-option label="管理员" :value="3" />
+              <el-select v-model="form.userType" placeholder="请选择用户类型" style="width: 100%">
+                <el-option v-for="item in userTypeOptions" :key="item.value" :label="item.label" :value="item.value" />
               </el-select>
             </el-form-item>
           </el-col>
@@ -124,26 +121,46 @@
             </el-form-item>
           </el-col>
         </el-row>
+
         <el-form-item label="角色" prop="roleIds">
           <el-select v-model="form.roleIds" multiple placeholder="请选择角色" style="width: 100%">
-            <el-option v-for="role in roleList" :key="role.id" :label="role.roleName" :value="role.id" />
+            <el-option
+              v-for="item in roleList"
+              :key="item.id"
+              :label="`${item.roleName}（${item.roleCode}）`"
+              :value="item.id"
+            />
           </el-select>
+          <div class="form-tip">切换用户类型时，系统会自动推荐对应角色，管理员可再手工调整。</div>
         </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" :loading="submitLoading" @click="handleSubmit">确定</el-button>
+        <el-button type="primary" :loading="submitLoading" @click="handleSubmit">保存</el-button>
       </template>
     </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { onMounted, reactive, ref, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Search, Refresh, Plus } from '@element-plus/icons-vue'
-import { getUserPage, createUser, updateUser, deleteUser, updateUserStatus, resetPassword } from '@/api/system'
-import { getRoleList } from '@/api/system'
+import {
+  createUser,
+  deleteUser,
+  getRoleList,
+  getUserPage,
+  resetPassword,
+  updateUser,
+  updateUserStatus
+} from '@/api/system'
+
+const userTypeOptions = [
+  { label: '种植户', value: 1 },
+  { label: '商家', value: 2 },
+  { label: '管理员', value: 3 },
+  { label: '普通用户', value: 4 }
+]
 
 const loading = ref(false)
 const submitLoading = ref(false)
@@ -154,90 +171,197 @@ const pageNum = ref(1)
 const pageSize = ref(10)
 const total = ref(0)
 
-const searchForm = reactive({ username: '', userType: null, status: null })
-const form = ref({})
-const formRef = ref()
+const queryForm = reactive({
+  username: '',
+  userType: null,
+  status: null
+})
 
+const formRef = ref()
+const form = ref(createEmptyForm())
 const rules = {
   username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
-  password: [{ required: true, message: '请输入密码', trigger: 'blur' }, { min: 6, message: '密码长度不少于6位', trigger: 'blur' }],
+  password: [
+    { required: true, message: '请输入密码', trigger: 'blur' },
+    { min: 6, message: '密码长度不能少于 6 位', trigger: 'blur' }
+  ],
   userType: [{ required: true, message: '请选择用户类型', trigger: 'change' }]
+}
+
+function createEmptyForm() {
+  return {
+    id: null,
+    username: '',
+    password: '',
+    realName: '',
+    phone: '',
+    email: '',
+    userType: 4,
+    status: 1,
+    roleIds: []
+  }
+}
+
+const getUserTypeTag = (userType) => {
+  if (userType === 1) return 'success'
+  if (userType === 2) return 'warning'
+  if (userType === 3) return 'danger'
+  return 'info'
+}
+
+const findDefaultRoleIds = (userType) => {
+  const map = {
+    1: ['ROLE_FARMER'],
+    2: ['ROLE_MERCHANT', 'ROLE_BUYER'],
+    3: ['ROLE_ADMIN'],
+    4: ['ROLE_USER']
+  }
+  const roleCodes = map[userType] || []
+  return roleList.value
+    .filter((item) => roleCodes.includes(item.roleCode))
+    .map((item) => item.id)
 }
 
 const loadData = async () => {
   loading.value = true
   try {
-    const res = await getUserPage({ pageNum: pageNum.value, pageSize: pageSize.value, ...searchForm })
+    const res = await getUserPage({
+      pageNum: pageNum.value,
+      pageSize: pageSize.value,
+      ...queryForm
+    })
     tableData.value = res.data.records || []
     total.value = res.data.total || 0
-  } finally { loading.value = false }
+  } finally {
+    loading.value = false
+  }
 }
 
-const loadRoleList = async () => {
-  try {
-    const res = await getRoleList()
-    roleList.value = res.data || []
-  } catch (e) { console.error(e) }
+const loadRoles = async () => {
+  const res = await getRoleList()
+  roleList.value = res.data || []
 }
 
-const handleSearch = () => { pageNum.value = 1; loadData() }
-const handleReset = () => { searchForm.username = ''; searchForm.userType = null; searchForm.status = null; handleSearch() }
-const handleAdd = () => { form.value = { status: 1, roleIds: [] }; dialogVisible.value = true }
-const handleEdit = (row) => { form.value = { ...row }; dialogVisible.value = true }
+const handleSearch = () => {
+  pageNum.value = 1
+  loadData()
+}
+
+const handleReset = () => {
+  queryForm.username = ''
+  queryForm.userType = null
+  queryForm.status = null
+  handleSearch()
+}
+
+const handleAdd = () => {
+  form.value = createEmptyForm()
+  form.value.roleIds = findDefaultRoleIds(form.value.userType)
+  dialogVisible.value = true
+}
+
+const handleEdit = (row) => {
+  form.value = {
+    ...createEmptyForm(),
+    ...row,
+    roleIds: row.roleIds || []
+  }
+  dialogVisible.value = true
+}
 
 const handleStatusChange = async (row) => {
   try {
     await updateUserStatus(row.id, row.status)
-    ElMessage.success('状态更新成功')
-  } catch (e) {
+    ElMessage.success('状态已更新')
+  } catch (error) {
     row.status = row.status === 1 ? 0 : 1
-    console.error(e)
+    console.error(error)
   }
 }
 
 const handleResetPwd = async (row) => {
-  try {
-    await ElMessageBox.confirm('确定要重置该用户密码为 123456 吗？', '提示', { type: 'warning' })
-    await resetPassword(row.id, '123456')
-    ElMessage.success('密码已重置为 123456')
-  } catch (e) { if (e !== 'cancel') console.error(e) }
+  await ElMessageBox.confirm('确认将该用户密码重置为 123456 吗？', '重置密码', {
+    type: 'warning'
+  })
+  await resetPassword(row.id, '123456')
+  ElMessage.success('密码已重置为 123456')
 }
 
 const handleDelete = async (row) => {
-  try {
-    await ElMessageBox.confirm('确定要删除该用户吗？', '提示', { type: 'warning' })
-    await deleteUser(row.id)
-    ElMessage.success('删除成功')
-    loadData()
-  } catch (e) { if (e !== 'cancel') console.error(e) }
+  await ElMessageBox.confirm('确定删除该用户吗？', '删除用户', { type: 'warning' })
+  await deleteUser(row.id)
+  ElMessage.success('用户已删除')
+  loadData()
 }
 
 const handleSubmit = async () => {
-  const valid = await formRef.value.validate().catch(() => false)
+  const valid = await formRef.value?.validate().catch(() => false)
   if (!valid) return
+
   submitLoading.value = true
   try {
     if (form.value.id) {
       await updateUser(form.value)
-      ElMessage.success('更新成功')
+      ElMessage.success('用户信息已更新')
     } else {
       await createUser(form.value)
-      ElMessage.success('创建成功')
+      ElMessage.success('用户已创建')
     }
     dialogVisible.value = false
     loadData()
-  } finally { submitLoading.value = false }
+  } finally {
+    submitLoading.value = false
+  }
 }
 
-onMounted(() => { loadData(); loadRoleList() })
+watch(
+  () => form.value.userType,
+  (userType) => {
+    if (!dialogVisible.value || !userType) return
+    if (!form.value.roleIds || form.value.roleIds.length === 0) {
+      form.value.roleIds = findDefaultRoleIds(userType)
+    }
+  }
+)
+
+onMounted(async () => {
+  await Promise.all([loadData(), loadRoles()])
+})
 </script>
 
 <style scoped>
-.page-container { display: flex; flex-direction: column; gap: 16px; }
-.search-bar { padding: 20px; display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px; }
-.search-bar :deep(.el-form) { flex: 1; }
-.search-bar :deep(.el-form-item) { margin-bottom: 0; }
-.table-container { padding: 20px; }
-.table-container :deep(.el-pagination) { margin-top: 16px; justify-content: flex-end; }
-.card-shadow { background: white; border-radius: 8px; box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08); }
+.user-page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.toolbar,
+.table-card {
+  padding: 18px 20px;
+}
+
+.toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.table-card :deep(.el-pagination) {
+  margin-top: 16px;
+  justify-content: flex-end;
+}
+
+.form-tip {
+  margin-top: 6px;
+  color: #839181;
+  font-size: 12px;
+}
+
+@media (max-width: 768px) {
+  .toolbar {
+    flex-direction: column;
+  }
+}
 </style>
