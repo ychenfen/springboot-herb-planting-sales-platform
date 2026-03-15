@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.herb.platform.mapper.CropMapper">
+
+    <!-- 按作物名称统计种植面积和产量 -->
+    <select id="getCropStatistics" resultType="java.util.Map">
+        SELECT
+            crop_name AS cropName,
+            COUNT(*) AS count,
+            IFNULL(SUM(plant_area), 0) AS totalArea,
+            IFNULL(SUM(actual_yield), 0) AS totalYield
+        FROM herb_crop
+        WHERE deleted = 0
+        <if test="userId != null">
+            AND user_id = #{userId}
+        </if>
+        GROUP BY crop_name
+        ORDER BY count DESC
+    </select>
+
+    <!-- 统计各状态作物数量 -->
+    <select id="countByStatus" resultType="java.util.Map">
+        SELECT
+            status,
+            COUNT(*) AS count
+        FROM herb_crop
+        WHERE deleted = 0
+        <if test="userId != null">
+            AND user_id = #{userId}
+        </if>
+        GROUP BY status
+    </select>
+
+</mapper>

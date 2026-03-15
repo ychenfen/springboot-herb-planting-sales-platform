@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.herb.platform.mapper.TraceMapper">
+
+    <!-- 统计溯源批次数量 -->
+    <select id="countTraces" resultType="int">
+        SELECT COUNT(*)
+        FROM herb_trace
+        WHERE deleted = 0
+        <if test="userId != null">
+            AND user_id = #{userId}
+        </if>
+        <if test="status != null">
+            AND status = #{status}
+        </if>
+    </select>
+
+    <!-- 根据溯源码查询 -->
+    <select id="selectByTraceCode" resultType="com.herb.platform.entity.Trace">
+        SELECT * FROM herb_trace
+        WHERE trace_code = #{traceCode}
+          AND deleted = 0
+        LIMIT 1
+    </select>
+
+</mapper>

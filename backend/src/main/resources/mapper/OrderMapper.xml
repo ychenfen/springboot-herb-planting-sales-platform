@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.herb.platform.mapper.OrderMapper">
+
+    <!-- 按日期统计订单数量和金额 -->
+    <select id="countOrdersByDateRange" resultType="java.util.Map">
+        SELECT
+            DATE_FORMAT(create_time, '%Y-%m-%d') AS date,
+            COUNT(*) AS orderCount,
+            IFNULL(SUM(total_amount), 0) AS totalAmount
+        FROM herb_order
+        WHERE deleted = 0
+        <if test="userId != null and userType == 1">
+            AND seller_id = #{userId}
+        </if>
+        <if test="userId != null and (userType == 2 or userType == 4)">
+            AND buyer_id = #{userId}
+        </if>
+        <if test="startDate != null">
+            AND create_time &gt;= #{startDate}
+        </if>
+        <if test="endDate != null">
+            AND create_time &lt;= #{endDate}
+        </if>
+        GROUP BY DATE_FORMAT(create_time, '%Y-%m-%d')
+        ORDER BY date
+    </select>
+
+    <!-- 药材销量排行 -->
+    <select id="getHerbSalesRanking" resultType="java.util.Map">
+        SELECT
+            herb_name AS herbName,
+            IFNULL(SUM(total_amount), 0) AS totalAmount,
+            IFNULL(SUM(quantity), 0) AS totalQuantity,
+            COUNT(*) AS orderCount
+        FROM herb_order
+        WHERE deleted = 0
+          AND order_status IN (2, 3, 4)
+        <if test="userId != null and userType == 1">
+            AND seller_id = #{userId}
+        </if>
+        <if test="userId != null and (userType == 2 or userType == 4)">
+            AND buyer_id = #{userId}
+        </if>
+        GROUP BY herb_name
+        ORDER BY totalAmount DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 统计今日订单数 -->
+    <select id="countTodayOrders" resultType="int">
+        SELECT COUNT(*)
+        FROM herb_order
+        WHERE deleted = 0
+          AND DATE(create_time) = CURDATE()
+        <if test="userId != null and userType == 1">
+            AND seller_id = #{userId}
+        </if>
+        <if test="userId != null and (userType == 2 or userType == 4)">
+            AND buyer_id = #{userId}
+        </if>
+    </select>
+
+    <!-- 统计订单总金额 -->
+    <select id="sumTotalAmount" resultType="java.math.BigDecimal">
+        SELECT IFNULL(SUM(total_amount), 0)
+        FROM herb_order
+        WHERE deleted = 0
+          AND order_status IN (2, 3, 4)
+        <if test="userId != null and userType == 1">
+            AND seller_id = #{userId}
+        </if>
+        <if test="userId != null and (userType == 2 or userType == 4)">
+            AND buyer_id = #{userId}
+        </if>
+    </select>
+
+</mapper>

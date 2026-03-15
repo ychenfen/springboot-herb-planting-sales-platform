@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.herb.platform.mapper.SupplyMapper">
+
+    <!-- 按日期统计供应信息发布数量 -->
+    <select id="countSupplyByDateRange" resultType="java.util.Map">
+        SELECT
+            DATE_FORMAT(create_time, '%Y-%m-%d') AS date,
+            COUNT(*) AS supplyCount
+        FROM herb_supply
+        WHERE deleted = 0
+        <if test="userId != null">
+            AND user_id = #{userId}
+        </if>
+        <if test="startDate != null">
+            AND create_time &gt;= #{startDate}
+        </if>
+        <if test="endDate != null">
+            AND create_time &lt;= #{endDate}
+        </if>
+        GROUP BY DATE_FORMAT(create_time, '%Y-%m-%d')
+        ORDER BY date
+    </select>
+
+    <!-- 统计活跃供应数量 -->
+    <select id="countActiveSupply" resultType="int">
+        SELECT COUNT(*)
+        FROM herb_supply
+        WHERE deleted = 0
+          AND status = 1
+        <if test="userId != null">
+            AND user_id = #{userId}
+        </if>
+    </select>
+
+</mapper>
