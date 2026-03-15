@@ -62,6 +62,10 @@
           </el-button>
         </el-form>
 
+        <div class="register-link">
+          还没有账号？<router-link to="/register">立即注册</router-link>
+        </div>
+
         <div class="account-panel">
           <span class="account-title">演示账号</span>
           <div class="account-list">
@@ -285,6 +289,23 @@ const handleLogin = async () => {
 .account-item span {
   color: #718071;
   font-size: 13px;
+}
+
+.register-link {
+  margin-top: 16px;
+  text-align: center;
+  color: #738174;
+  font-size: 14px;
+}
+
+.register-link a {
+  color: #2e7d32;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.register-link a:hover {
+  text-decoration: underline;
 }
 
 @media (max-width: 960px) {

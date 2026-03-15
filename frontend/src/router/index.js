@@ -9,6 +9,12 @@ const routes = [
     meta: { title: '登录', public: true }
   },
   {
+    path: '/register',
+    name: 'Register',
+    component: () => import('@/views/login/Register.vue'),
+    meta: { title: '注册', public: true }
+  },
+  {
     path: '/',
     component: () => import('@/layouts/MainLayout.vue'),
     redirect: '/dashboard',
@@ -154,8 +160,14 @@ const routes = [
     ]
   },
   {
+    path: '/404',
+    name: 'NotFound',
+    component: () => import('@/views/error/NotFound.vue'),
+    meta: { title: '页面未找到', public: true }
+  },
+  {
     path: '/:pathMatch(.*)*',
-    redirect: '/dashboard'
+    redirect: '/404'
   }
 ]
 
@@ -165,7 +177,7 @@ const router = createRouter({
 })
 
 router.beforeEach((to, from, next) => {
-  document.title = to.meta.title || '中药材种植与销售平台'
+  document.title = to.meta.title ? `${to.meta.title} - 本草云链` : '中药材种植与销售平台'
 
   const userStore = useUserStore()
 
