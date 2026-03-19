@@ -3,10 +3,9 @@
     <section class="hero card-shadow">
       <div>
         <span class="hero-kicker">专业 / 实用 / 乡村振兴</span>
-        <h2>中药材智能百科</h2>
-        <p>支持按药材类型、种植季节、病害类型筛选，也支持“黄芪 病害”这类组合关键词直接检索。</p>
+        <h2>中药材种植百科</h2>
+        <p>支持按药材类型、种植季节和病害类型快速检索常见种植要点，也支持组合关键词直接搜索。</p>
       </div>
-      <el-tag type="success" size="large">答辩亮点：解决农户找不到、看不懂、搜不准</el-tag>
     </section>
 
     <section class="toolbar card-shadow">

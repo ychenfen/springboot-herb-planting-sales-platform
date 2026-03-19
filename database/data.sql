@@ -256,11 +256,11 @@ INSERT INTO herb_crop (id, user_id, field_id, crop_name, crop_variety, plant_dat
 (3, 2, 2, '黄芪', '蒙古黄芪', '2024-03-20', '2025-09-20', 25.00, 10000.00, '生长期', '一般', 1);
 
 INSERT INTO herb_farm_record (crop_id, user_id, activity_type, activity_date, activity_detail, materials_used, weather, remark) VALUES
-(1, 2, '播种', '2024-03-15', '进行白芍种苗移栽', '白芍种苗 500 株', '晴天', '定植深度 15cm'),
-(1, 2, '施肥', '2024-05-10', '施加有机肥', '有机肥 200kg', '多云', '采用沟施方式'),
-(1, 2, '浇水', '2024-06-20', '夏季灌溉', '清水', '晴天高温', '滴灌保持土壤湿润'),
-(2, 2, '播种', '2024-04-01', '种植丹参', '丹参种苗 300 株', '晴天', '行距 30cm'),
-(3, 2, '播种', '2024-03-20', '种植黄芪', '黄芪种子 5kg', '阴天', '采用条播方式');
+(1, 2, 'sow', '2024-03-15', '进行白芍种苗移栽', '白芍种苗 500 株', '晴天', '定植深度 15cm'),
+(1, 2, 'fertilize', '2024-05-10', '施加有机肥', '有机肥 200kg', '多云', '采用沟施方式'),
+(1, 2, 'water', '2024-06-20', '夏季灌溉', '清水', '晴天高温', '滴灌保持土壤湿润'),
+(2, 2, 'sow', '2024-04-01', '种植丹参', '丹参种苗 300 株', '晴天', '行距 30cm'),
+(3, 2, 'sow', '2024-03-20', '种植黄芪', '黄芪种子 5kg', '阴天', '采用条播方式');
 
 INSERT INTO herb_supply (
     id, user_id, crop_id, herb_name, herb_variety, quality_grade, supply_quantity, remaining_quantity,
@@ -274,6 +274,26 @@ INSERT INTO herb_supply (
 INSERT INTO herb_demand (id, user_id, herb_name, herb_variety, quality_requirement, demand_quantity, target_price, demand_date, description, contact_name, contact_phone, status) VALUES
 (1, 3, '当归', '岷县当归', '要求无硫熏、水分含量不超过 13%，需提供质检报告。', 1000.00, 45.00, '2025-11-15', '长期采购优质当归，支持订单合作。', '李四', '13800138002', 1),
 (2, 3, '黄芪', '蒙古黄芪', '要求根条粗壮、无病虫害，支持溯源批次。', 800.00, 32.00, '2025-11-20', '寻找稳定货源，可长期合作。', '李四', '13800138002', 1);
+
+INSERT INTO herb_order (
+    id, order_no, supply_id, seller_id, buyer_id, herb_name, herb_variety, quantity, unit_price, total_amount,
+    order_status, payment_status, delivery_address, delivery_phone, delivery_name, logistics_company, logistics_no,
+    confirm_time, delivery_time, complete_time, cancel_time, cancel_reason, remark, create_time
+) VALUES
+(101, 'ORD202603010101', 1, 2, 3, '白芍', '杭白芍', 100.00, 32.00, 3200.00, 4, 1,
+ '浙江省杭州市西湖区某某路88号', '13800138002', '李四', '顺丰速运', 'SF2026030101',
+ DATE_SUB(NOW(), INTERVAL 5 DAY), DATE_SUB(NOW(), INTERVAL 4 DAY), DATE_SUB(NOW(), INTERVAL 3 DAY), NULL, NULL, '按批发价成交', DATE_SUB(NOW(), INTERVAL 5 DAY)),
+(102, 'ORD202603020102', 2, 2, 4, '丹参', '山东丹参', 50.00, 25.00, 1250.00, 3, 1,
+ '上海市浦东新区某某大道100号', '13800138003', '普通用户演示', '京东物流', 'JD2026030201',
+ DATE_SUB(NOW(), INTERVAL 2 DAY), DATE_SUB(NOW(), INTERVAL 1 DAY), NULL, NULL, NULL, '已发货待收货', DATE_SUB(NOW(), INTERVAL 2 DAY)),
+(103, 'ORD202603030103', 3, 2, 3, '黄芪', '蒙古黄芪', 20.00, 31.00, 620.00, 1, 0,
+ '浙江省杭州市西湖区某某路88号', '13800138002', '李四', NULL, NULL,
+ NULL, NULL, NULL, NULL, NULL, '待卖家确认', DATE_SUB(NOW(), INTERVAL 12 HOUR));
+
+INSERT INTO herb_favorite (user_id, target_type, target_id, create_time) VALUES
+(3, 1, 1, DATE_SUB(NOW(), INTERVAL 6 DAY)),
+(4, 1, 2, DATE_SUB(NOW(), INTERVAL 2 DAY)),
+(3, 2, 1, DATE_SUB(NOW(), INTERVAL 1 DAY));
 
 INSERT INTO herb_trace (
     id, trace_code, crop_id, user_id, herb_name, batch_no, production_area, plant_date,

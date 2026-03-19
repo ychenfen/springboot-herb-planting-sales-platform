@@ -13,7 +13,7 @@
         <div class="feature-list">
           <div class="feature-item">
             <el-icon><CircleCheck /></el-icon>
-            <span>中药材智能百科与病虫害识别演示</span>
+            <span>中药材百科与病虫害识别</span>
           </div>
           <div class="feature-item">
             <el-icon><CircleCheck /></el-icon>
@@ -64,28 +64,6 @@
 
         <div class="register-link">
           还没有账号？<router-link to="/register">立即注册</router-link>
-        </div>
-
-        <div class="account-panel">
-          <span class="account-title">演示账号</span>
-          <div class="account-list">
-            <div class="account-item">
-              <strong>管理员</strong>
-              <span>admin / admin123</span>
-            </div>
-            <div class="account-item">
-              <strong>种植户</strong>
-              <span>farmer001 / admin123</span>
-            </div>
-            <div class="account-item">
-              <strong>商家</strong>
-              <span>buyer001 / admin123</span>
-            </div>
-            <div class="account-item">
-              <strong>普通用户</strong>
-              <span>user001 / admin123</span>
-            </div>
-          </div>
         </div>
       </section>
     </div>

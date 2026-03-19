@@ -147,10 +147,10 @@ public class StatisticsServiceImpl implements StatisticsService {
         List<Object> orderAmounts = new ArrayList<>();
 
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM-dd");
-        LocalDate today = LocalDate.now();
+        LocalDate endDate = resolveTrendEndDate(findLatestOrderDate(userId, userType), days);
 
         for (int i = days - 1; i >= 0; i--) {
-            LocalDate date = today.minusDays(i);
+            LocalDate date = endDate.minusDays(i);
             dates.add(date.format(formatter));
 
             LocalDateTime startOfDay = date.atStartOfDay();
@@ -201,10 +201,12 @@ public class StatisticsServiceImpl implements StatisticsService {
         List<Object> demandCounts = new ArrayList<>();
 
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM-dd");
-        LocalDate today = LocalDate.now();
+        LocalDate latestSupplyDate = findLatestSupplyDate(userId, userType);
+        LocalDate latestDemandDate = findLatestDemandDate(userId, userType);
+        LocalDate endDate = resolveTrendEndDate(maxDate(latestSupplyDate, latestDemandDate), days);
 
         for (int i = days - 1; i >= 0; i--) {
-            LocalDate date = today.minusDays(i);
+            LocalDate date = endDate.minusDays(i);
             dates.add(date.format(formatter));
 
             LocalDateTime startOfDay = date.atStartOfDay();
@@ -435,5 +437,66 @@ public class StatisticsServiceImpl implements StatisticsService {
 
     private boolean isBuyer(Integer userType) {
         return userType != null && (userType == Constants.USER_TYPE_MERCHANT || userType == Constants.USER_TYPE_USER);
+    }
+
+    private LocalDate resolveTrendEndDate(LocalDate latestDate, int days) {
+        LocalDate today = LocalDate.now();
+        if (latestDate == null) {
+            return today;
+        }
+        LocalDate currentWindowStart = today.minusDays(Math.max(days - 1L, 0L));
+        return latestDate.isBefore(currentWindowStart) ? latestDate : today;
+    }
+
+    private LocalDate findLatestOrderDate(Long userId, Integer userType) {
+        LambdaQueryWrapper<Order> wrapper = new LambdaQueryWrapper<>();
+        if (!isAdmin(userType) && userId != null) {
+            if (isFarmer(userType)) {
+                wrapper.eq(Order::getSellerId, userId);
+            } else if (isBuyer(userType)) {
+                wrapper.eq(Order::getBuyerId, userId);
+            }
+        }
+        wrapper.orderByDesc(Order::getCreateTime).last("LIMIT 1");
+        Order latest = orderMapper.selectOne(wrapper);
+        return toLocalDate(latest != null ? latest.getCreateTime() : null);
+    }
+
+    private LocalDate findLatestSupplyDate(Long userId, Integer userType) {
+        LambdaQueryWrapper<Supply> wrapper = new LambdaQueryWrapper<>();
+        if (isFarmer(userType) && userId != null) {
+            wrapper.eq(Supply::getUserId, userId);
+        } else if (!isAdmin(userType)) {
+            return null;
+        }
+        wrapper.orderByDesc(Supply::getCreateTime).last("LIMIT 1");
+        Supply latest = supplyMapper.selectOne(wrapper);
+        return toLocalDate(latest != null ? latest.getCreateTime() : null);
+    }
+
+    private LocalDate findLatestDemandDate(Long userId, Integer userType) {
+        LambdaQueryWrapper<Demand> wrapper = new LambdaQueryWrapper<>();
+        if (isBuyer(userType) && userId != null) {
+            wrapper.eq(Demand::getUserId, userId);
+        } else if (!isAdmin(userType)) {
+            return null;
+        }
+        wrapper.orderByDesc(Demand::getCreateTime).last("LIMIT 1");
+        Demand latest = demandMapper.selectOne(wrapper);
+        return toLocalDate(latest != null ? latest.getCreateTime() : null);
+    }
+
+    private LocalDate toLocalDate(LocalDateTime time) {
+        return time != null ? time.toLocalDate() : null;
+    }
+
+    private LocalDate maxDate(LocalDate first, LocalDate second) {
+        if (first == null) {
+            return second;
+        }
+        if (second == null) {
+            return first;
+        }
+        return first.isAfter(second) ? first : second;
     }
 }

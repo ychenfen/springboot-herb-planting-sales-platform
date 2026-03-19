@@ -14,7 +14,7 @@
           <el-icon :size="24"><Grape /></el-icon>
         </div>
         <div v-show="!isCollapsed" class="logo-text">
-          <strong>本草云链</strong>
+          <strong>中药材平台</strong>
           <span>种植 · 销售 · 溯源</span>
         </div>
       </div>

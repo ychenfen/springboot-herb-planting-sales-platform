@@ -163,9 +163,13 @@ public class OrderServiceImpl implements OrderService {
             throw new BusinessException("订单状态不正确");
         }
 
+        if (!StringUtils.hasText(logisticsCompany) || !StringUtils.hasText(logisticsNo)) {
+            throw new BusinessException(ResponseCode.PARAM_ERROR, "物流信息不能为空");
+        }
+
         order.setOrderStatus(Constants.ORDER_STATUS_DELIVERING);
-        order.setLogisticsCompany(logisticsCompany);
-        order.setLogisticsNo(logisticsNo);
+        order.setLogisticsCompany(logisticsCompany.trim());
+        order.setLogisticsNo(logisticsNo.trim());
         order.setDeliveryTime(LocalDateTime.now());
         order.setUpdateTime(LocalDateTime.now());
         orderMapper.updateById(order);

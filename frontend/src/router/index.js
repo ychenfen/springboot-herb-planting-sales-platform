@@ -177,7 +177,7 @@ const router = createRouter({
 })
 
 router.beforeEach((to, from, next) => {
-  document.title = to.meta.title ? `${to.meta.title} - 本草云链` : '中药材种植与销售平台'
+  document.title = to.meta.title ? `${to.meta.title} - 中药材种植与销售平台` : '中药材种植与销售平台'
 
   const userStore = useUserStore()
 

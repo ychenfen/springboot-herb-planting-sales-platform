@@ -2,12 +2,18 @@
   <div class="order-page">
     <section class="hero card-shadow">
       <div>
-        <span class="hero-kicker">流程规范展示</span>
+        <span class="hero-kicker">订单进度可视化</span>
         <h2>订单状态实时追踪</h2>
         <p>覆盖待确认、待发货、待收货、已完成、已取消等状态，并通过时间线展示每一步业务动作。</p>
       </div>
-      <el-tag size="large" type="success">功能完整度加分项</el-tag>
     </section>
+
+    <el-alert
+      :title="pageHint"
+      type="info"
+      :closable="false"
+      show-icon
+    />
 
     <section class="toolbar card-shadow">
       <el-form :inline="true" :model="queryForm">
@@ -31,7 +37,14 @@
     </section>
 
     <section class="table-card card-shadow">
-      <el-table :data="tableData" v-loading="loading" stripe>
+      <div v-if="!loading && !tableData.length" class="empty-panel">
+        <el-empty description="暂无订单记录">
+          <el-button type="primary" @click="goOrderSource">{{ emptyActionText }}</el-button>
+        </el-empty>
+      </div>
+
+      <template v-else>
+        <el-table :data="tableData" v-loading="loading" stripe>
         <el-table-column prop="orderNo" label="订单号" width="180" />
         <el-table-column prop="herbName" label="药材名称" min-width="120" />
         <el-table-column prop="quantity" label="数量(kg)" width="110" align="center">
@@ -107,17 +120,18 @@
             </el-button>
           </template>
         </el-table-column>
-      </el-table>
+        </el-table>
 
-      <el-pagination
-        v-model:current-page="pageNum"
-        v-model:page-size="pageSize"
-        :total="total"
-        :page-sizes="[10, 20, 50]"
-        layout="total, sizes, prev, pager, next, jumper"
-        @size-change="loadData"
-        @current-change="loadData"
-      />
+        <el-pagination
+          v-model:current-page="pageNum"
+          v-model:page-size="pageSize"
+          :total="total"
+          :page-sizes="[10, 20, 50]"
+          layout="total, sizes, prev, pager, next, jumper"
+          @size-change="loadData"
+          @current-change="loadData"
+        />
+      </template>
     </section>
 
     <el-drawer v-model="detailVisible" title="订单详情" size="560px">
@@ -164,6 +178,7 @@
 
 <script setup>
 import { computed, onMounted, reactive, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   cancelOrder,
@@ -176,8 +191,17 @@ import {
 import { useUserStore } from '@/stores/user'
 
 const userStore = useUserStore()
+const router = useRouter()
 const isFarmer = computed(() => userStore.userType === 1)
 const canReceive = computed(() => [2, 4].includes(userStore.userType))
+const pageHint = computed(() => (
+  isFarmer.value
+    ? '卖家确认、发货和查看订单详情都在这里完成。'
+    : '请先到“供应大厅”选择药材并下单，提交后订单会自动出现在这里。'
+))
+const emptyActionText = computed(() => (
+  isFarmer.value ? '去供应大厅查看' : '去供应大厅下单'
+))
 
 const loading = ref(false)
 const tableData = ref([])
@@ -285,6 +309,8 @@ const handleCancel = async (row) => {
   loadData()
 }
 
+const goOrderSource = () => router.push('/sales/supply')
+
 onMounted(() => {
   loadData()
 })
@@ -334,6 +360,13 @@ onMounted(() => {
 .table-card :deep(.el-pagination) {
   margin-top: 16px;
   justify-content: flex-end;
+}
+
+.empty-panel {
+  min-height: 320px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .money {

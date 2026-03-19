@@ -1,5 +1,12 @@
 <template>
   <div class="page-container">
+    <el-alert
+      title="可在需求信息页直接收藏感兴趣的采购需求，收藏后会同步到“我的收藏”。"
+      type="info"
+      :closable="false"
+      show-icon
+    />
+
     <div class="search-bar card-shadow">
       <el-form :inline="true" :model="searchForm">
         <el-form-item label="药材名称">

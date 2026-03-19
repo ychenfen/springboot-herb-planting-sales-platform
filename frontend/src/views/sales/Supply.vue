@@ -16,6 +16,13 @@
       </div>
     </section>
 
+    <el-alert
+      :title="pageHint"
+      type="info"
+      :closable="false"
+      show-icon
+    />
+
     <section class="toolbar card-shadow">
       <el-form :inline="true" :model="queryForm" class="toolbar-form">
         <el-form-item label="药材名称">
@@ -409,6 +416,7 @@
 
 <script setup>
 import { computed, onMounted, reactive, ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getCropPage } from '@/api/planting'
 import { addFavorite, removeFavorite } from '@/api/favorite'
@@ -426,8 +434,14 @@ import { useUserStore } from '@/stores/user'
 const CART_KEY = 'herb-platform-cart'
 
 const userStore = useUserStore()
+const router = useRouter()
 const isFarmer = computed(() => userStore.userType === 1)
 const canPlaceOrder = computed(() => [2, 4].includes(userStore.userType))
+const pageHint = computed(() => (
+  isFarmer.value
+    ? '发布供应后，采购方可在这里直接收藏、加入购物车并下单。'
+    : '可在当前列表直接收藏、加入购物车或立即下单，下单后订单会同步到“订单追踪”。'
+))
 
 const loading = ref(false)
 const submitLoading = ref(false)
@@ -751,6 +765,7 @@ const submitOrder = async () => {
     cartItems.value = cartItems.value.filter((item) => item.supplyId !== orderForm.supplyId)
     persistCart()
     loadData()
+    router.push('/sales/order')
   } finally {
     orderLoading.value = false
   }

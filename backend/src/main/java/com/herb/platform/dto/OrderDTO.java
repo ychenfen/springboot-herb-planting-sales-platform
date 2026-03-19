@@ -5,7 +5,9 @@ import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 
 import javax.validation.constraints.DecimalMin;
+import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Pattern;
 import java.math.BigDecimal;
 
 /**
@@ -24,12 +26,16 @@ public class OrderDTO {
     @ApiModelProperty(value = "数量(kg)", required = true)
     private BigDecimal quantity;
 
+    @NotBlank(message = "收货地址不能为空")
     @ApiModelProperty("收货地址")
     private String deliveryAddress;
 
+    @NotBlank(message = "收货电话不能为空")
+    @Pattern(regexp = "^1[3-9]\\d{9}$", message = "收货电话格式不正确")
     @ApiModelProperty("收货电话")
     private String deliveryPhone;
 
+    @NotBlank(message = "收货人不能为空")
     @ApiModelProperty("收货人")
     private String deliveryName;
 

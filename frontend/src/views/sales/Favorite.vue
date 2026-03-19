@@ -1,5 +1,12 @@
 <template>
   <div class="page-container">
+    <el-alert
+      title="收藏入口位于供应信息页和需求信息页的操作列；收藏后会自动汇总到这里。"
+      type="info"
+      :closable="false"
+      show-icon
+    />
+
     <div class="search-bar card-shadow">
       <el-form :inline="true" :model="searchForm">
         <el-form-item label="类型">
@@ -19,49 +26,60 @@
     </div>
 
     <div class="table-container card-shadow">
-      <el-table :data="tableData" v-loading="loading" stripe>
-        <el-table-column prop="targetTypeName" label="类型" width="120" />
-        <el-table-column label="药材名称" min-width="140">
-          <template #default="{ row }">
-            {{ getItem(row)?.herbName || '-' }}
-          </template>
-        </el-table-column>
-        <el-table-column label="品种" width="120">
-          <template #default="{ row }">
-            {{ getItem(row)?.herbVariety || '-' }}
-          </template>
-        </el-table-column>
-        <el-table-column label="价格/目标价" width="130" align="center">
-          <template #default="{ row }">
-            <span v-if="row.targetType === 1">¥{{ getItem(row)?.price ?? '-' }}</span>
-            <span v-else>¥{{ getItem(row)?.targetPrice ?? '-' }}</span>
-          </template>
-        </el-table-column>
-        <el-table-column label="状态" width="100" align="center">
-          <template #default="{ row }">
-            <el-tag :type="getStatusTag(row)">
-              {{ getItem(row)?.statusName || '-' }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="createTime" label="收藏时间" width="170" />
-        <el-table-column label="操作" width="160" fixed="right">
-          <template #default="{ row }">
-            <el-button type="primary" link @click="handleView(row)">查看</el-button>
-            <el-button type="danger" link @click="handleRemove(row)">取消收藏</el-button>
-          </template>
-        </el-table-column>
-      </el-table>
+      <div v-if="!loading && !tableData.length" class="empty-panel">
+        <el-empty description="暂无收藏内容，先去供应信息或需求信息页收藏感兴趣的项目">
+          <div class="empty-actions">
+            <el-button type="primary" @click="goSupply">去看供应信息</el-button>
+            <el-button @click="goDemand">去看需求信息</el-button>
+          </div>
+        </el-empty>
+      </div>
 
-      <el-pagination
-        v-model:current-page="pageNum"
-        v-model:page-size="pageSize"
-        :total="total"
-        :page-sizes="[10, 20, 50]"
-        layout="total, sizes, prev, pager, next, jumper"
-        @size-change="loadData"
-        @current-change="loadData"
-      />
+      <template v-else>
+        <el-table :data="tableData" v-loading="loading" stripe>
+          <el-table-column prop="targetTypeName" label="类型" width="120" />
+          <el-table-column label="药材名称" min-width="140">
+            <template #default="{ row }">
+              {{ getItem(row)?.herbName || '-' }}
+            </template>
+          </el-table-column>
+          <el-table-column label="品种" width="120">
+            <template #default="{ row }">
+              {{ getItem(row)?.herbVariety || '-' }}
+            </template>
+          </el-table-column>
+          <el-table-column label="价格/目标价" width="130" align="center">
+            <template #default="{ row }">
+              <span v-if="row.targetType === 1">¥{{ getItem(row)?.price ?? '-' }}</span>
+              <span v-else>¥{{ getItem(row)?.targetPrice ?? '-' }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column label="状态" width="100" align="center">
+            <template #default="{ row }">
+              <el-tag :type="getStatusTag(row)">
+                {{ getItem(row)?.statusName || '-' }}
+              </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column prop="createTime" label="收藏时间" width="170" />
+          <el-table-column label="操作" width="160" fixed="right">
+            <template #default="{ row }">
+              <el-button type="primary" link @click="handleView(row)">查看</el-button>
+              <el-button type="danger" link @click="handleRemove(row)">取消收藏</el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+
+        <el-pagination
+          v-model:current-page="pageNum"
+          v-model:page-size="pageSize"
+          :total="total"
+          :page-sizes="[10, 20, 50]"
+          layout="total, sizes, prev, pager, next, jumper"
+          @size-change="loadData"
+          @current-change="loadData"
+        />
+      </template>
     </div>
 
     <el-dialog v-model="detailVisible" title="收藏详情" width="680px" destroy-on-close>
@@ -79,6 +97,7 @@
 
 <script setup>
 import { ref, reactive } from 'vue'
+import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search, Refresh } from '@element-plus/icons-vue'
 import { getFavoritePage, removeFavorite } from '@/api/favorite'
@@ -91,6 +110,7 @@ const total = ref(0)
 const detailVisible = ref(false)
 const detail = ref({})
 const detailTypeName = ref('')
+const router = useRouter()
 
 const searchForm = reactive({ targetType: null, keyword: '' })
 
@@ -136,8 +156,9 @@ const loadData = async () => {
     }
     const res = await getFavoritePage(params)
     const records = res.data.records || []
-    tableData.value = applyKeywordFilter(records)
-    total.value = res.data.total || 0
+    const filteredRecords = applyKeywordFilter(records)
+    tableData.value = filteredRecords
+    total.value = searchForm.keyword ? filteredRecords.length : (res.data.total || 0)
   } finally {
     loading.value = false
   }
@@ -161,6 +182,9 @@ const handleView = (row) => {
   detailVisible.value = true
 }
 
+const goSupply = () => router.push('/sales/supply')
+const goDemand = () => router.push('/sales/demand')
+
 const handleRemove = async (row) => {
   try {
     await ElMessageBox.confirm('确定要取消收藏吗？', '提示', { type: 'warning' })
@@ -183,4 +207,6 @@ loadData()
 .table-container { padding: 20px; }
 .table-container :deep(.el-pagination) { margin-top: 16px; justify-content: flex-end; }
 .card-shadow { background: white; border-radius: 8px; box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08); }
+.empty-panel { min-height: 320px; display: flex; align-items: center; justify-content: center; }
+.empty-actions { display: flex; gap: 12px; justify-content: center; }
 </style>

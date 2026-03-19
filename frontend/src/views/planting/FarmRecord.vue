@@ -30,7 +30,7 @@
         </el-table-column>
         <el-table-column prop="activityDate" label="活动日期" width="120" />
         <el-table-column prop="activityTime" label="活动时间" width="100" />
-        <el-table-column prop="description" label="活动描述" min-width="200" show-overflow-tooltip />
+        <el-table-column prop="activityDetail" label="活动描述" min-width="200" show-overflow-tooltip />
         <el-table-column prop="weather" label="天气" width="80" />
         <el-table-column prop="temperature" label="温度" width="80" />
         <el-table-column label="操作" width="150" fixed="right">
@@ -55,7 +55,7 @@
     <el-dialog v-model="dialogVisible" :title="form.id ? '编辑记录' : '新增记录'" width="600px" destroy-on-close>
       <el-form ref="formRef" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="关联作物" prop="cropId">
-          <el-select v-model="form.cropId" placeholder="请选择作物" style="width: 100%">
+          <el-select v-model="form.cropId" placeholder="请选择作物" no-data-text="暂无可选作物，请先到作物管理新增作物" style="width: 100%">
             <el-option v-for="item in cropList" :key="item.id" :label="item.cropName" :value="item.id" />
           </el-select>
         </el-form-item>
@@ -92,8 +92,8 @@
             </el-form-item>
           </el-col>
         </el-row>
-        <el-form-item label="活动描述" prop="description">
-          <el-input v-model="form.description" type="textarea" :rows="3" placeholder="请输入活动描述" />
+        <el-form-item label="活动描述" prop="activityDetail">
+          <el-input v-model="form.activityDetail" type="textarea" :rows="3" placeholder="请输入活动描述" />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -123,10 +123,20 @@ const searchForm = reactive({ activityType: '' })
 const form = ref({})
 const formRef = ref()
 
+const createEmptyForm = () => ({
+  cropId: undefined,
+  activityType: '',
+  activityDate: '',
+  weather: '',
+  temperature: '',
+  activityDetail: ''
+})
+
 const rules = {
   cropId: [{ required: true, message: '请选择作物', trigger: 'change' }],
   activityType: [{ required: true, message: '请选择活动类型', trigger: 'change' }],
-  activityDate: [{ required: true, message: '请选择活动日期', trigger: 'change' }]
+  activityDate: [{ required: true, message: '请选择活动日期', trigger: 'change' }],
+  activityDetail: [{ required: true, message: '请输入活动描述', trigger: 'blur' }]
 }
 
 const loadData = async () => {
@@ -140,15 +150,27 @@ const loadData = async () => {
 
 const loadCropList = async () => {
   try {
-    const res = await getCropPage({ pageNum: 1, pageSize: 1000 })
+    const res = await getCropPage({ pageNum: 1, pageSize: 100 })
     cropList.value = res.data.records || []
   } catch (e) { console.error(e) }
 }
 
 const handleSearch = () => { pageNum.value = 1; loadData() }
 const handleReset = () => { searchForm.activityType = ''; handleSearch() }
-const handleAdd = () => { form.value = {}; dialogVisible.value = true }
-const handleEdit = (row) => { form.value = { ...row }; dialogVisible.value = true }
+const handleAdd = async () => {
+  await loadCropList()
+  form.value = createEmptyForm()
+  dialogVisible.value = true
+}
+const handleEdit = async (row) => {
+  await loadCropList()
+  form.value = {
+    ...createEmptyForm(),
+    ...row,
+    activityDetail: row.activityDetail || row.description || ''
+  }
+  dialogVisible.value = true
+}
 
 const handleDelete = async (row) => {
   try {

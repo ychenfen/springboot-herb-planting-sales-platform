@@ -131,6 +131,16 @@ public class KnowledgeServiceImpl implements KnowledgeService {
                 .limit(3)
                 .collect(Collectors.toList());
 
+        double topScore = matches.isEmpty() ? 0D : matches.get(0).getMatchScore();
+        double secondScore = matches.size() > 1 ? matches.get(1).getMatchScore() : 0D;
+        boolean lowConfidence = topScore < 75D || topScore - secondScore < 3D;
+        if (lowConfidence) {
+            throw new BusinessException(ResponseCode.DATA_NOT_FOUND,
+                    StringUtils.hasText(herbName)
+                            ? "未匹配到可靠结果，请上传更清晰的病害图片后重试"
+                            : "未匹配到可靠结果，请上传更清晰的病害图片，或先选择药材名称后再识别");
+        }
+
         DiseaseRecognitionVO result = new DiseaseRecognitionVO();
         result.setFileName(file.getOriginalFilename());
         result.setHerbName(StringUtils.hasText(herbName) ? herbName : matches.get(0).getHerbName());

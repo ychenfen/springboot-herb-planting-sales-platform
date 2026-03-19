@@ -2,16 +2,10 @@
   <div class="diagnosis-page">
     <section class="intro card-shadow">
       <div>
-        <span class="intro-kicker">科技助农演示能力</span>
+        <span class="intro-kicker">图文辅助识别</span>
         <h2>病虫害智能识别</h2>
-        <p>上传病害图片后，系统会基于本地样例库进行相似度匹配，并给出图文对照与防治建议。</p>
+        <p>上传病害图片后，系统会根据图片特征与药材样例库进行匹配，并给出相似病症及防治建议。</p>
       </div>
-      <el-alert
-        title="演示模型说明：当前版本采用本地样例图库 + 图像相似度匹配，适合课程答辩和功能演示。"
-        type="success"
-        :closable="false"
-        show-icon
-      />
     </section>
 
     <section class="workspace">
@@ -186,6 +180,7 @@ const loadDiseaseList = async () => {
 
 const handleFileChange = (file) => {
   selectedFile.value = file.raw
+  result.value = {}
   revokePreview()
   previewUrl.value = URL.createObjectURL(file.raw)
 }
@@ -206,6 +201,8 @@ const handleIdentify = async () => {
   try {
     const res = await identifyDisease(formData)
     result.value = res.data || {}
+  } catch (e) {
+    result.value = {}
   } finally {
     identifyLoading.value = false
   }
